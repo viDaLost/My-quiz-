@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#4f46e5" />
   <title>Quiz Master</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -143,7 +146,7 @@
     <!-- GAME -->
     <div id="game-screen" class="screen hidden">
       <div id="timer-display" class="hidden" aria-live="polite">
-        <div class="timer-top">
+        <div class="timer-top" id="timer-top">
           <span class="timer-icon">⏳</span>
           <span id="time-left" class="timer-digits">0</span>
           <span class="timer-sec">сек</span>
