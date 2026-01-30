@@ -21,19 +21,12 @@
     <div id="home-screen" class="screen fade-in">
       <div class="hero">
         <div class="hero-title">Quiz Master</div>
-        <div class="hero-subtitle">Создавай викторины и делись ссылкой 🚀</div>
+        <div class="hero-subtitle">Создавай викторины и делись ссылкой </div>
       </div>
 
       <div class="home-card">
         <button onclick="showCreator()" class="btn primary">Создать викторину</button>
         <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-
-        <div class="home-tip">
-          <span class="dot"></span>
-          Если у тебя есть ссылка — просто открой её в браузере.
-        </div>
-      </div>
-    </div>
 
     <!-- MY QUIZZES -->
     <div id="myquizzes-screen" class="screen hidden">
@@ -67,13 +60,12 @@
 
         <!-- Подсказка drag&drop -->
         <div class="qnav-hint">
-          Перетаскивай вопросы за <span class="drag-handle-hint">≡</span> чтобы менять порядок (Drag & Drop).
         </div>
       </div>
 
       <div class="field">
-        <label>Название (для «Моих викторин»):</label>
-        <input type="text" id="quiz-title" placeholder="Например: Фильмы / Игры" maxlength="60" />
+        <label>Название викторины:</label>
+        <input type="text" id="quiz-title" placeholder="Название" maxlength="60" />
       </div>
 
       <div class="field">
