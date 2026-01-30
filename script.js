@@ -1,12 +1,6 @@
-// -------------------------
-// STORAGE KEYS
-// -------------------------
 const COMPLETED_PREFIX = 'quiz_master_completed:';  // блок повтора для чужих викторин
-const MY_QUIZZES_KEY = 'quiz_master_my_quizzes';    // "мои викторины"
+const MY_QUIZZES_KEY = 'quiz_master_my_quizzes';
 
-// -------------------------
-// STATE
-// -------------------------
 let currentQuiz = null;
 let quizEncoded = '';
 let currentQIndex = 0;
@@ -19,11 +13,10 @@ let questionLocked = false;
 let answersLog = [];
 let allowRepeat = false;
 
-// -------------------------
-// BOOT
-// -------------------------
+// DnD
+let dragId = null;
+
 window.onload = () => {
-  initBgQuestions();
   wireModeSelect();
 
   const hash = window.location.hash;
@@ -35,16 +28,10 @@ window.onload = () => {
   }
 };
 
-// -------------------------
-// UI SCREEN HELPERS
-// -------------------------
 function setActiveScreen(id) {
   const ids = ['home-screen', 'myquizzes-screen', 'creator-screen', 'link-screen', 'game-screen', 'result-screen'];
   ids.forEach((x) => document.getElementById(x).classList.toggle('hidden', x !== id));
 
-  // фон ❓ только на главном
-  document.body.classList.toggle('show-bg', id === 'home-screen');
-  // прозрачный контейнер только на главном
   document.body.classList.toggle('home', id === 'home-screen');
 }
 
@@ -58,59 +45,46 @@ function goHomeClearHash() {
   setActiveScreen('home-screen');
 }
 
-// -------------------------
-// BACKGROUND ❓ FALLING
-// -------------------------
-function initBgQuestions() {
-  const host = document.getElementById('bg-questions');
-  if (!host) return;
+/* =========================
+   CREATOR
+========================= */
 
-  host.innerHTML = '';
-
-  // больше, чаще
-  const count = 55;
-  for (let i = 0; i < count; i++) {
-    const s = document.createElement('div');
-    s.className = 'qmark';
-    s.textContent = '❓';
-
-    const size = rand(14, 44);
-    const dur = rand(5, 11);          // быстрее
-    const delay = rand(0, 4);         // чаще
-    const left = rand(-10, 110);      // по всей ширине
-
-    s.style.fontSize = `${size}px`;
-    s.style.animationDuration = `${dur}s`;
-    s.style.animationDelay = `${delay}s`;
-    s.style.left = `${left}vw`;
-
-    host.appendChild(s);
-  }
-}
-
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// -------------------------
-// CREATOR
-// -------------------------
 function wireModeSelect() {
   const el = document.getElementById('quiz-mode');
-  el.onchange = (e) => {
-    document.getElementById('timer-setting').classList.toggle('hidden', e.target.value !== 'timer');
-  };
+  el.onchange = () => refreshModeFields();
+
+  refreshModeFields();
+}
+
+function refreshModeFields() {
+  const mode = document.getElementById('quiz-mode').value;
+  document.getElementById('timer-setting').classList.toggle('hidden', mode !== 'timer');
+  document.getElementById('speed-setting').classList.toggle('hidden', mode !== 'speed');
+}
+
+function resetCreatorForm() {
+  document.getElementById('quiz-title').value = '';
+  document.getElementById('quiz-mode').value = 'classic';
+  document.getElementById('time-limit').value = '';
+  document.getElementById('total-time-limit').value = '';
+  document.getElementById('question-search').value = '';
+
+  const qc = document.getElementById('questions-container');
+  qc.innerHTML = '';
+
+  refreshModeFields();
+  addQuestionField(); // всегда стартуем с 1 вопроса
+  buildQuestionNav();
 }
 
 function showCreator() {
   setActiveScreen('creator-screen');
-  const container = document.getElementById('questions-container');
-  if (container.children.length === 0) addQuestionField();
-  buildQuestionNav();
+  // ВАЖНО: очищаем прошлое наполнение
+  resetCreatorForm();
 }
 
 function addQuestionField() {
-  // сворачиваем все текущие вопросы (чтобы не превращалось в простыню)
+  // сворачиваем все, чтобы не было “простыни”
   document.querySelectorAll('.qdetails').forEach((d) => (d.open = false));
 
   const container = document.getElementById('questions-container');
@@ -123,21 +97,33 @@ function addQuestionField() {
   details.dataset.blockid = blockId;
   details.dataset.qindex = String(qIndex);
 
+  // DnD: draggable wrapper
+  details.draggable = true;
+  details.addEventListener('dragstart', (e) => onDragStart(e, blockId));
+  details.addEventListener('dragover', (e) => onDragOver(e, blockId));
+  details.addEventListener('dragleave', () => details.classList.remove('drop-target'));
+  details.addEventListener('drop', (e) => onDrop(e, blockId));
+  details.addEventListener('dragend', () => cleanupDragStyles());
+
   details.innerHTML = `
-    <summary>
+    <summary onclick="setActiveChipByOpen();">
       <div class="qsum-left">
         <div class="qsum-title">Вопрос ${qIndex + 1}</div>
         <div class="qsum-mini" id="qmini-${blockId}">Нажми, чтобы свернуть/развернуть</div>
       </div>
-      <button type="button" class="btn secondary qremove" onclick="removeQuestion('${blockId}'); event.stopPropagation();">
-        Удалить
-      </button>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="drag-handle" title="Перетащи вопрос">≡</span>
+        <button type="button" class="btn secondary qremove"
+          onclick="removeQuestion('${blockId}'); event.stopPropagation();">Удалить</button>
+      </div>
     </summary>
 
     <div style="margin-top: 10px;">
       <div class="field">
         <label>Текст вопроса:</label>
-        <input type="text" class="q-text" placeholder="Например: Столица Франции?" oninput="updateMini('${blockId}')"/>
+        <input type="text" class="q-text" placeholder="Например: Столица Франции?"
+          oninput="updateMini('${blockId}')" />
       </div>
 
       <div class="field" style="margin-top: 6px;">
@@ -156,14 +142,13 @@ function addQuestionField() {
 
   container.appendChild(details);
 
-  // 2 варианта по умолчанию
   addOption(blockId);
   addOption(blockId);
 
   renumberQuestions();
   buildQuestionNav();
+  applyQuestionSearch();
 
-  // прокрутить к новому вопросу
   details.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -172,6 +157,7 @@ function removeQuestion(blockId) {
   if (el) el.remove();
   renumberQuestions();
   buildQuestionNav();
+  applyQuestionSearch();
 }
 
 function renumberQuestions() {
@@ -182,10 +168,10 @@ function renumberQuestions() {
     const title = b.querySelector('.qsum-title');
     if (title) title.textContent = `Вопрос ${idx + 1}`;
 
-    // радио-группа уникальна на вопрос
     const radios = b.querySelectorAll('input[type="radio"]');
     radios.forEach((r) => (r.name = `correct-${idx}`));
   });
+  setActiveChipByOpen();
 }
 
 function addOption(blockId) {
@@ -203,9 +189,11 @@ function addOption(blockId) {
   row.className = 'option-row';
   row.innerHTML = `
     <input type="radio" name="correct-${qIndex}" value="${optIndex}" aria-label="Правильный вариант" />
-    <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}" oninput="updateMini('${blockId}')"/>
+    <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}"
+      oninput="updateMini('${blockId}')" />
   `;
   wrap.appendChild(row);
+  updateMini(blockId);
 }
 
 function updateMini(blockId) {
@@ -228,20 +216,16 @@ function buildQuestionNav() {
   if (!chipsHost) return;
 
   const blocks = [...document.querySelectorAll('.qdetails')];
-  if (!blocks.length) {
-    chipsHost.innerHTML = '';
-    return;
-  }
-
-  const activeIndex = blocks.findIndex((b) => b.open) >= 0 ? blocks.findIndex((b) => b.open) : 0;
-
   chipsHost.innerHTML = blocks.map((b, idx) => {
     const blockId = b.dataset.blockid;
     const mini = document.getElementById(`qmini-${blockId}`)?.textContent || '';
-    const label = `Q${idx + 1}`;
-    const active = idx === activeIndex ? 'active' : '';
-    return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">${label}</button>`;
+    const active = b.open ? 'active' : '';
+    return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">Вопрос ${idx + 1}</button>`;
   }).join('');
+}
+
+function setActiveChipByOpen() {
+  buildQuestionNav();
 }
 
 function jumpToQuestion(idx) {
@@ -256,10 +240,98 @@ function jumpToQuestion(idx) {
   buildQuestionNav();
 }
 
+function expandAll(open) {
+  document.querySelectorAll('.qdetails').forEach((d) => (d.open = open));
+  buildQuestionNav();
+}
+
+function applyQuestionSearch() {
+  const q = (document.getElementById('question-search').value || '').trim().toLowerCase();
+  const blocks = [...document.querySelectorAll('.qdetails')];
+
+  if (!q) {
+    blocks.forEach(b => b.setAttribute('hidden-by-search', '0'));
+    return;
+  }
+
+  blocks.forEach((b) => {
+    const text = (b.querySelector('.q-text')?.value || '').toLowerCase();
+    const opts = [...b.querySelectorAll('.opt-text')].map(x => (x.value || '').toLowerCase()).join(' ');
+    const mini = (b.querySelector('.qsum-mini')?.textContent || '').toLowerCase();
+
+    const match = text.includes(q) || opts.includes(q) || mini.includes(q);
+    b.setAttribute('hidden-by-search', match ? '0' : '1');
+  });
+}
+
+/* =========================
+   DRAG & DROP (HTML5)
+========================= */
+
+function onDragStart(e, blockId) {
+  dragId = blockId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', blockId);
+
+  const el = document.querySelector(`.qdetails[data-blockid="${blockId}"]`);
+  if (el) el.classList.add('dragging');
+}
+
+function onDragOver(e, overId) {
+  e.preventDefault();
+  if (!dragId || dragId === overId) return;
+
+  const overEl = document.querySelector(`.qdetails[data-blockid="${overId}"]`);
+  if (overEl) overEl.classList.add('drop-target');
+}
+
+function onDrop(e, dropId) {
+  e.preventDefault();
+  const fromId = dragId || e.dataTransfer.getData('text/plain');
+  if (!fromId || fromId === dropId) return;
+
+  const container = document.getElementById('questions-container');
+  const fromEl = document.querySelector(`.qdetails[data-blockid="${fromId}"]`);
+  const dropEl = document.querySelector(`.qdetails[data-blockid="${dropId}"]`);
+  if (!fromEl || !dropEl) return;
+
+  // вставляем fromEl перед/после в зависимости от позиции курсора
+  const dropRect = dropEl.getBoundingClientRect();
+  const before = (e.clientY || 0) < (dropRect.top + dropRect.height / 2);
+  container.insertBefore(fromEl, before ? dropEl : dropEl.nextSibling);
+
+  cleanupDragStyles();
+  renumberQuestions();
+  buildQuestionNav();
+  applyQuestionSearch();
+}
+
+function cleanupDragStyles() {
+  document.querySelectorAll('.qdetails').forEach(el => el.classList.remove('dragging', 'drop-target'));
+  dragId = null;
+}
+
+/* =========================
+   GENERATE LINK + VALIDATIONS
+========================= */
+
 function generateLink() {
   const mode = document.getElementById('quiz-mode').value;
   const timeLimit = Number(document.getElementById('time-limit').value || 0);
+  const totalTimeLimit = Number(document.getElementById('total-time-limit').value || 0);
   const title = (document.getElementById('quiz-title').value || '').trim();
+
+  // ОГРАНИЧЕНИЯ ПО ВРЕМЕНИ
+  if (mode === 'timer' && (!timeLimit || timeLimit <= 0)) {
+    alert('Укажи время на один вопрос (сек).');
+    document.getElementById('time-limit').focus();
+    return;
+  }
+  if (mode === 'speed' && (!totalTimeLimit || totalTimeLimit <= 0)) {
+    alert('Укажи общее время на всю викторину (сек).');
+    document.getElementById('total-time-limit').focus();
+    return;
+  }
 
   const blocks = [...document.querySelectorAll('.qdetails')];
   if (blocks.length === 0) {
@@ -270,6 +342,7 @@ function generateLink() {
   const data = [];
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
+
     const qText = (b.querySelector('.q-text').value || '').trim();
     const expl = (b.querySelector('.q-expl').value || '').trim();
 
@@ -284,7 +357,14 @@ function generateLink() {
     data.push({ q: qText, o: rawOpts, a: correctIndex, e: expl });
   }
 
-  const quizObj = { v: 2, title, m: mode, t: timeLimit, d: data };
+  const quizObj = {
+    v: 3,
+    title,
+    m: mode,
+    t: (mode === 'timer') ? timeLimit : 0,
+    tt: (mode === 'speed') ? totalTimeLimit : 0, // total time
+    d: data
+  };
 
   const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(quizObj));
   const link = `${window.location.origin}${window.location.pathname}#quiz=${encoded}`;
@@ -307,9 +387,10 @@ function copyLink() {
   if (ok) confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
 }
 
-// -------------------------
-// MY QUIZZES
-// -------------------------
+/* =========================
+   MY QUIZZES
+========================= */
+
 function showMyQuizzes() {
   setActiveScreen('myquizzes-screen');
   renderMyQuizzes();
@@ -320,22 +401,19 @@ function loadMyQuizzes() {
     const raw = localStorage.getItem(MY_QUIZZES_KEY);
     const arr = raw ? JSON.parse(raw) : [];
     return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 function saveMyQuiz(item) {
   const arr = loadMyQuizzes();
-  const exists = arr.some((x) => x.encoded === item.encoded);
-  if (!exists) {
+  if (!arr.some(x => x.encoded === item.encoded)) {
     arr.unshift(item);
     localStorage.setItem(MY_QUIZZES_KEY, JSON.stringify(arr));
   }
 }
 
 function deleteMyQuiz(encoded) {
-  const arr = loadMyQuizzes().filter((x) => x.encoded !== encoded);
+  const arr = loadMyQuizzes().filter(x => x.encoded !== encoded);
   localStorage.setItem(MY_QUIZZES_KEY, JSON.stringify(arr));
   try { localStorage.removeItem(COMPLETED_PREFIX + encoded); } catch {}
   renderMyQuizzes();
@@ -372,10 +450,9 @@ function renderMyQuizzes() {
 
   host.innerHTML = arr.map((q) => {
     const dt = new Date(q.createdAt || Date.now()).toLocaleString();
-    const title = escapeHtml(q.title || 'Викторина');
     return `
       <div class="quiz-item">
-        <div class="title">${title}</div>
+        <div class="title">${escapeHtml(q.title || 'Викторина')}</div>
         <div class="meta">Создано: ${escapeHtml(dt)}</div>
         <div class="actions">
           <button class="btn primary" onclick="playMyQuiz('${q.encoded}')">Пройти</button>
@@ -387,9 +464,10 @@ function renderMyQuizzes() {
   }).join('');
 }
 
-// -------------------------
-// QUIZ LOADING
-// -------------------------
+/* =========================
+   QUIZ LOADING
+========================= */
+
 function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
   let json;
   allowRepeat = !!opts.allowRepeat;
@@ -426,9 +504,10 @@ function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
   showQuestion();
 }
 
-// -------------------------
-// GAME
-// -------------------------
+/* =========================
+   GAME
+========================= */
+
 function showQuestion() {
   stopTimer();
   questionLocked = false;
@@ -453,7 +532,17 @@ function showQuestion() {
     container.appendChild(b);
   });
 
-  if (currentQuiz.m === 'timer') startTimer(Number(currentQuiz.t || 0));
+  // TIMER MODE: per question
+  if (currentQuiz.m === 'timer') startTimer(Number(currentQuiz.t || 0), { mode: 'perQuestion' });
+
+  // SPEED MODE: total time
+  if (currentQuiz.m === 'speed') {
+    // запускаем общий таймер один раз
+    if (!window.__speedTimerStarted) {
+      window.__speedTimerStarted = true;
+      startTimer(Number(currentQuiz.tt || 0), { mode: 'total' });
+    }
+  }
 }
 
 function onAnswerClick(selectedIndex) {
@@ -468,8 +557,15 @@ function onAnswerClick(selectedIndex) {
   });
 }
 
-function onTimeout() {
+function onTimeout(modeInfo) {
   if (questionLocked) return;
+
+  // если общий таймер (speed) — завершаем всю викторину
+  if (modeInfo?.mode === 'total') {
+    finishGame(true);
+    return;
+  }
+
   const q = currentQuiz.d[currentQIndex];
   resolveQuestion({
     selectedIndex: null,
@@ -482,7 +578,9 @@ function onTimeout() {
 
 function resolveQuestion({ selectedIndex, correctIndex, options, explanation, reason }) {
   questionLocked = true;
-  stopTimer();
+
+  // В режиме speed общий таймер НЕ останавливаем
+  if (currentQuiz.m !== 'speed') stopTimer();
 
   const btns = [...document.querySelectorAll('.option-btn')];
   btns.forEach((b) => (b.disabled = true));
@@ -493,13 +591,12 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
 
   if (isCorrect) score++;
 
-  // подсветка только если пользователь ответил
+  // подсветка только если ответил сам
   if (reason === 'answered') {
     btns.forEach((b, idx) => {
       if (idx === correctIndex) b.classList.add('correct');
       if (selectedIndex !== null && idx === selectedIndex && selectedIndex !== correctIndex) b.classList.add('wrong');
     });
-
     if (isCorrect) confetti({ particleCount: 40, spread: 50 });
   }
 
@@ -512,13 +609,9 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
   });
 
   const summaryEl = document.getElementById('post-summary');
-  if (reason === 'timeout') {
-    summaryEl.innerText = `⏰ Время вышло.`;
-  } else if (isCorrect) {
-    summaryEl.innerText = `✅ Верно!`;
-  } else {
-    summaryEl.innerText = `❌ Неверно. Правильный ответ: ${correctText}`;
-  }
+  if (reason === 'timeout') summaryEl.innerText = `⏰ Время вышло.`;
+  else if (isCorrect) summaryEl.innerText = `✅ Верно!`;
+  else summaryEl.innerText = `❌ Неверно. Правильный ответ: ${correctText}`;
 
   const btnShow = document.getElementById('btn-show-expl');
   const expText = (explanation || '').trim();
@@ -546,14 +639,15 @@ function nextQuestion() {
   showQuestion();
 }
 
-// -------------------------
-// TIMER
-// -------------------------
-function startTimer(sec) {
+/* =========================
+   TIMER (supports perQuestion and total)
+========================= */
+
+function startTimer(sec, info = { mode: 'perQuestion' }) {
   const disp = document.getElementById('timer-display');
   const digits = document.getElementById('time-left');
   const fill = document.getElementById('timer-bar-fill');
-  const top = disp.querySelector('.timer-top');
+  const top = document.getElementById('timer-top');
 
   if (!sec || sec <= 0) {
     disp.classList.add('hidden');
@@ -568,15 +662,28 @@ function startTimer(sec) {
   const startedAt = Date.now();
   const durationMs = sec * 1000;
 
-  const update = () => {
-    const now = Date.now();
-    const elapsed = now - startedAt;
-    const leftMs = Math.max(0, durationMs - elapsed);
-    const leftSec = Math.ceil(leftMs / 1000);
+  // если это общий таймер — сохраняем параметры (чтобы не сбрасывать при вопросах)
+  if (info.mode === 'total') {
+    window.__speedTimerMeta = { startedAt, durationMs };
+  }
 
+  const update = () => {
+    let leftMs;
+
+    if (info.mode === 'total') {
+      // общий таймер считаем от сохранённого старта
+      const meta = window.__speedTimerMeta;
+      const now = Date.now();
+      leftMs = Math.max(0, meta.durationMs - (now - meta.startedAt));
+    } else {
+      const now = Date.now();
+      leftMs = Math.max(0, durationMs - (now - startedAt));
+    }
+
+    const leftSec = Math.ceil(leftMs / 1000);
     digits.innerText = String(leftSec);
 
-    const pct = Math.max(0, (leftMs / durationMs) * 100);
+    const pct = Math.max(0, (leftMs / (info.mode === 'total' ? window.__speedTimerMeta.durationMs : durationMs)) * 100);
     fill.style.width = `${pct}%`;
 
     if (pct <= 20 || leftSec <= 3) {
@@ -587,12 +694,13 @@ function startTimer(sec) {
 
     if (leftMs <= 0) {
       stopTimer();
-      onTimeout();
+      onTimeout(info);
     }
   };
 
+  stopTimer();
   update();
-  timerTickInterval = setInterval(update, 50);
+  timerTickInterval = setInterval(update, 60);
 }
 
 function stopTimer() {
@@ -604,20 +712,23 @@ function stopTimer() {
   }
 }
 
-// -------------------------
-// FINISH + SAVED RESULTS
-// -------------------------
-function finishGame() {
+/* =========================
+   FINISH + SAVED
+========================= */
+
+function finishGame(timeOver = false) {
+  // если speed — сбросить флаг таймера
+  window.__speedTimerStarted = false;
+  window.__speedTimerMeta = null;
+
   stopTimer();
   setActiveScreen('result-screen');
 
-  const totalQuestions = currentQuiz?.d?.length || 0;
   document.getElementById('score-val').innerText = String(score);
 
   const sr = document.getElementById('speed-result');
   if (currentQuiz.m === 'speed') {
-    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    sr.innerText = `Время: ${totalTime} сек.`;
+    sr.innerText = timeOver ? `⏰ Время закончилось.` : `Готово!`;
     sr.classList.remove('hidden');
   } else {
     sr.classList.add('hidden');
@@ -629,7 +740,7 @@ function finishGame() {
       mode: currentQuiz.m,
       finishedAt: Date.now(),
       score,
-      totalQuestions,
+      totalQuestions: currentQuiz?.d?.length || 0,
       answersLog,
       timeTakenSec: Number(((Date.now() - startTime) / 1000).toFixed(1)),
     };
@@ -638,8 +749,7 @@ function finishGame() {
 
   renderAnswerReview(answersLog);
   document.getElementById('answer-review').classList.remove('hidden');
-
-  confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+  confetti({ particleCount: 140, spread: 100, origin: { y: 0.5 } });
 }
 
 function showSavedResult(saved) {
@@ -649,12 +759,7 @@ function showSavedResult(saved) {
   document.getElementById('score-val').innerText = String(saved.score ?? 0);
 
   const sr = document.getElementById('speed-result');
-  if (saved.mode === 'speed' && saved.timeTakenSec != null) {
-    sr.innerText = `Время: ${saved.timeTakenSec} сек.`;
-    sr.classList.remove('hidden');
-  } else {
-    sr.classList.add('hidden');
-  }
+  sr.classList.toggle('hidden', saved.mode !== 'speed');
 
   renderAnswerReview(saved.answersLog || []);
   document.getElementById('answer-review').classList.remove('hidden');
@@ -662,48 +767,42 @@ function showSavedResult(saved) {
 
 function renderAnswerReview(items) {
   const tbody = document.getElementById('review-body');
-  tbody.innerHTML = (items || [])
-    .map((it, i) => {
-      const your = it.selected === null ? '— (не успел)' : escapeHtml(String(it.selected));
-      const corr = escapeHtml(String(it.correct ?? ''));
-      const q = escapeHtml(String(it.question ?? ''));
-      const statusLabel = it.status === 'ok' ? 'Верно' : it.status === 'bad' ? 'Неверно' : 'Не засчитан';
-      const statusClass = it.status === 'ok' ? 'status-ok' : it.status === 'bad' ? 'status-bad' : 'status-skip';
-
-      return `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${q}</td>
-          <td>${your}</td>
-          <td>${corr}</td>
-          <td class="${statusClass}">${statusLabel}</td>
-        </tr>
-      `;
-    })
-    .join('');
+  tbody.innerHTML = (items || []).map((it, i) => {
+    const your = it.selected === null ? '— (не успел)' : escapeHtml(String(it.selected));
+    const corr = escapeHtml(String(it.correct ?? ''));
+    const q = escapeHtml(String(it.question ?? ''));
+    const statusLabel = it.status === 'ok' ? 'Верно' : it.status === 'bad' ? 'Неверно' : 'Не засчитан';
+    const statusClass = it.status === 'ok' ? 'status-ok' : it.status === 'bad' ? 'status-bad' : 'status-skip';
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${q}</td>
+        <td>${your}</td>
+        <td>${corr}</td>
+        <td class="${statusClass}">${statusLabel}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
-// -------------------------
-// COMPLETED STORAGE
-// -------------------------
+/* =========================
+   COMPLETED STORAGE
+========================= */
+
 function readCompleted(id) {
   try {
     const raw = localStorage.getItem(COMPLETED_PREFIX + id);
     return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function writeCompleted(id, payload) {
-  try {
-    localStorage.setItem(COMPLETED_PREFIX + id, JSON.stringify(payload));
-  } catch {}
+  try { localStorage.setItem(COMPLETED_PREFIX + id, JSON.stringify(payload)); } catch {}
 }
 
-// -------------------------
-// UTIL
-// -------------------------
+/* =========================
+   UTIL
+========================= */
 function escapeHtml(str) {
   return str
     .replace(/&/g, '&amp;')
