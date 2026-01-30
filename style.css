@@ -17,13 +17,14 @@
 
 body{
   min-height:100dvh;
-  padding:15px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   overflow-x:hidden;
   overflow-y:auto;
   display:flex;
   align-items:center;
   justify-content:center;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* красивый фон */
@@ -63,14 +64,15 @@ body:not(.home){
 /* контейнер */
 .container{
   width:100%;
-  max-width:450px;
-  padding:22px;
+  max-width:520px;
+  padding:18px;
   border-radius:26px;
   position:relative;
   z-index:1;
-  max-height: calc(100dvh - 30px);
+  max-height: calc(100dvh - 24px);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  overscroll-behavior: contain;
 
   background: var(--glass);
   border: 1px solid var(--glass-border);
@@ -113,7 +115,7 @@ body.home .container{
 /* кнопки 3D */
 .btn{
   width:100%;
-  padding:16px;
+  padding:14px;
   border:none;
   border-radius:18px;
   font-size:1.05rem;
@@ -122,6 +124,9 @@ body.home .container{
   margin-bottom:12px;
   transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
 }
+
+/* чтобы маленькие кнопки не растягивались на всю ширину */
+.btn.inline{width:auto; margin-bottom:0}
 .primary{
   background: var(--primary);
   color:#fff;
@@ -180,14 +185,17 @@ textarea{min-height:86px;resize:vertical}
   padding:10px;
   margin-bottom:12px;
 }
-.qnav-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.qnav-row:last-child{margin-bottom:0}
+
+/* новый layout qnav (под HTML) */
+.qnav-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .qnav-title{font-weight:1000;color:rgba(17,24,39,0.85)}
-.qnav-actions{display:flex;gap:8px}
-.qnav-mini{
-  width:auto;margin:0;padding:10px 12px;border-radius:14px;font-size:.9rem;
-}
-.qsearch{flex:1;margin:0}
+.qnav-add{width:auto;margin:0;padding:10px 12px;border-radius:14px;font-size:.95rem;display:inline-flex;align-items:center;gap:8px}
+.qnav-add-ico{font-size:1.15rem;line-height:1}
+.qnav-search{margin-bottom:10px}
+.qsearch{margin:0}
+.qnav-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.qnav-mini{width:100%;margin:0;padding:10px 12px;border-radius:14px;font-size:.92rem}
+.qnav-chips-wrap{margin-bottom:2px}
 
 /* chips */
 .qnav-chips{
@@ -218,6 +226,66 @@ textarea{min-height:86px;resize:vertical}
   padding:12px;
   margin-bottom:12px;
   box-shadow: 0 10px 18px rgba(0,0,0,0.06);
+}
+
+.drag-handle{
+  user-select:none;
+  -webkit-user-select:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  background: rgba(17,24,39,0.06);
+  border: 1px solid rgba(17,24,39,0.10);
+  font-weight:1000;
+  cursor:grab;
+  font-size:1.3rem;
+}
+.drag-handle:active{cursor:grabbing}
+
+.qdetails.dragging{opacity:0.6}
+.qdetails.drop-target{outline:3px dashed rgba(79,70,229,0.45)}
+
+.qplaceholder{
+  border-radius:18px;
+  border:2px dashed rgba(79,70,229,0.35);
+  background: rgba(79,70,229,0.06);
+  margin-bottom:12px;
+}
+
+.qdetails.touch-dragging{
+  box-shadow: 0 24px 44px rgba(0,0,0,0.22);
+  transform: scale(1.01);
+}
+
+.drag-handle{cursor:grab}
+.drag-handle:active{cursor:grabbing}
+
+/* footer buttons */
+.creator-footer{display:flex;flex-direction:column;gap:10px}
+.creator-footer .btn{margin-bottom:0}
+
+/* App-like: на телефоне контейнер занимает почти весь экран */
+@media (max-width: 520px){
+  body{align-items:stretch; justify-content:stretch; padding:0}
+  .container{
+    max-width:none;
+    min-height:100dvh;
+    max-height:100dvh;
+    border-radius:0;
+    padding:16px;
+  }
+  .hero-title{font-size:2.05rem}
+  .btn{padding:14px; border-radius:16px}
+  input,select,textarea{border-radius:14px}
+}
+
+@media (min-width: 780px){
+  .container{max-width:720px}
+  .qnav-actions{grid-template-columns:auto auto; justify-content:start}
+  .qnav-mini{width:auto}
 }
 .qdetails[hidden-by-search="1"]{display:none}
 
