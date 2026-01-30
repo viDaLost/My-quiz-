@@ -1,434 +1,365 @@
-:root {
-  --bg-color: #f0f4f8;
-  --primary: #4f46e5;
-  --primary-dark: #3730a3;
-  --success: #22c55e;
-  --success-dark: #166534;
-  --danger: #ef4444;
-  --danger-dark: #991b1b;
-  --text-main: #111827;
+:root{
+  --bg1:#0b1020;
+  --bg2:#111a33;
+  --primary:#4f46e5;
+  --primary-dark:#3730a3;
+  --danger:#ef4444;
+  --success:#22c55e;
+  --text:#0b1220;
 
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.35);
-  --field-bg: rgba(255, 255, 255, 0.96);
-  --field-border: rgba(148, 163, 184, 0.55);
+  --glass: rgba(255,255,255,0.78);
+  --glass-border: rgba(255,255,255,0.35);
+  --field-bg: rgba(255,255,255,0.96);
+  --field-border: rgba(148, 163, 184, 0.58);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*{box-sizing:border-box;margin:0;padding:0}
 
-body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg-color);
-  color: var(--text-main);
-  min-height: 100dvh;
-  padding: 15px;
-
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
+body{
+  min-height:100dvh;
+  padding:15px;
+  overflow-x:hidden;
+  overflow-y:auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
 }
 
-/* Фон ❓ */
-.bg-questions {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 250ms ease;
+/* красивый фон */
+.bg-decor{position:fixed;inset:0;z-index:0;pointer-events:none}
+.blob{
+  position:absolute; width:520px; height:520px; border-radius:50%;
+  filter: blur(45px);
+  opacity:0.75;
+  background: radial-gradient(circle at 30% 30%, rgba(79,70,229,0.95), rgba(79,70,229,0.0) 60%);
 }
-body.show-bg .bg-questions { opacity: 1; }
-
-.bg-questions .qmark {
-  position: absolute;
-  top: -15%;
-  opacity: 0;
-  animation-name: fallDown;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  user-select: none;
-  will-change: transform, opacity;
-  filter: blur(0.12px);
+.blob.b1{left:-180px; top:-220px}
+.blob.b2{
+  right:-220px; bottom:-260px;
+  background: radial-gradient(circle at 30% 30%, rgba(34,197,94,0.85), rgba(34,197,94,0.0) 60%);
+  opacity:0.55;
 }
-
-@keyframes fallDown {
-  0%   { transform: translateY(0); opacity: 0; }
-  10%  { opacity: 0.28; }
-  55%  { opacity: 0.55; }
-  90%  { opacity: 0.22; }
-  100% { transform: translateY(140vh); opacity: 0; }
+.grid{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, rgba(0,0,0,0.85), rgba(0,0,0,0) 65%);
+  opacity:0.22;
 }
 
-/* Контейнер */
-.container {
-  width: 100%;
-  max-width: 450px;
+body.home{
+  background: radial-gradient(1200px 700px at 30% 20%, #1b2a5a 0%, transparent 55%),
+              radial-gradient(900px 650px at 70% 80%, #2a1b5a 0%, transparent 55%),
+              linear-gradient(160deg, var(--bg1), var(--bg2));
+}
+
+body:not(.home){
+  background: #f0f4f8;
+}
+
+/* контейнер */
+.container{
+  width:100%;
+  max-width:450px;
+  padding:22px;
+  border-radius:26px;
+  position:relative;
+  z-index:1;
+  max-height: calc(100dvh - 30px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
 
   background: var(--glass);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-
-  padding: 22px;
-  border-radius: 24px;
-  box-shadow: 0 18px 25px -8px rgba(0,0,0,0.18);
-
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 1;
-
-  max-height: calc(100dvh - 30px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 18px 28px -10px rgba(0,0,0,0.25);
 }
 
-/* В главном меню вообще без "белого фона" */
-body.home .container {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+/* на главном меню — стеклянная карточка попрозрачнее и красивее */
+body.home .container{
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 24px 40px -14px rgba(0,0,0,0.55);
 }
 
-/* Экраны */
-.screen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+.screen{display:flex;flex-direction:column;justify-content:center}
+.hidden{display:none}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.screen-title {
-  text-align: center;
-  margin-bottom: 12px;
-  font-weight: 1000;
-}
+.screen-title{text-align:center;margin-bottom:12px;font-weight:1000}
 
-/* Бренд */
-.brand { text-align: center; margin-bottom: 18px; }
-.brand-title {
-  font-size: 2.25rem;
-  font-weight: 1000;
-  color: var(--primary);
+/* HERO */
+.hero{text-align:center;margin-bottom:18px}
+.hero-title{
+  font-size:2.35rem;
+  font-weight:1000;
+  color:#fff;
+  letter-spacing:.5px;
   text-shadow:
-    0 2px 0 rgba(55, 48, 163, 0.35),
-    0 8px 16px rgba(0,0,0,0.18);
-  letter-spacing: 0.5px;
+    0 2px 0 rgba(0,0,0,0.25),
+    0 18px 28px rgba(0,0,0,0.45);
 }
-.brand-subtitle {
-  margin-top: 6px;
-  font-size: 0.95rem;
-  color: rgba(17,24,39,0.75);
-  font-weight: 800;
+.hero-subtitle{
+  margin-top:7px;
+  font-weight:800;
+  color: rgba(255,255,255,0.85);
 }
 
-.small-text {
-  text-align: center;
-  font-size: 0.95rem;
-  color: rgba(17,24,39,0.7);
-  margin-top: 2px;
+/* кнопки 3D */
+.btn{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:18px;
+  font-size:1.05rem;
+  font-weight:950;
+  cursor:pointer;
+  margin-bottom:12px;
+  transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
 }
-
-/* Кнопки */
-.btn {
-  width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 16px;
-  font-size: 1.05rem;
-  font-weight: 900;
-  cursor: pointer;
-  transition: all 0.1s;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.primary {
+.primary{
   background: var(--primary);
-  color: #fff;
-  box-shadow: 0 7px 0 var(--primary-dark);
+  color:#fff;
+  box-shadow: 0 8px 0 var(--primary-dark), 0 18px 28px rgba(0,0,0,0.18);
 }
-.primary:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--primary-dark); }
-
-.secondary {
-  background: rgba(229, 231, 235, 0.88);
-  color: #374151;
-  box-shadow: 0 7px 0 rgba(156, 163, 175, 0.9);
+.primary:active{transform:translateY(4px);box-shadow:0 4px 0 var(--primary-dark), 0 14px 22px rgba(0,0,0,0.16)}
+.secondary{
+  background: rgba(229,231,235,0.92);
+  color:#374151;
+  box-shadow: 0 8px 0 rgba(156,163,175,0.95), 0 18px 28px rgba(0,0,0,0.10);
 }
-.secondary:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(156, 163, 175, 0.9); }
+.secondary:active{transform:translateY(4px);box-shadow:0 4px 0 rgba(156,163,175,0.95), 0 14px 22px rgba(0,0,0,0.10)}
 
-/* Формы — заметнее и красивее */
-.field { margin-bottom: 14px; text-align: left; }
-.field label {
-  display:block;
-  margin-bottom: 7px;
-  font-weight: 900;
-  font-size: 0.95rem;
-  color: rgba(17,24,39,0.92);
+.home-tip{
+  margin-top:10px;
+  padding:12px 14px;
+  border-radius:16px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.88);
+  font-weight:800;
+  text-align:center;
+}
+.home-tip .dot{
+  display:inline-block;
+  width:8px;height:8px;border-radius:50%;
+  background: rgba(255,255,255,0.9);
+  margin-right:8px;
 }
 
-input, select, textarea {
-  width: 100%;
-  padding: 13px 12px;
-  border-radius: 14px;
-  border: 2px solid var(--field-border);
-  font-size: 1.02rem;
-  outline: none;
+/* формы */
+.field{margin-bottom:14px;text-align:left}
+.field label{display:block;margin-bottom:7px;font-weight:950;font-size:.95rem;color:rgba(17,24,39,0.9)}
+input,select,textarea{
+  width:100%;
+  padding:13px 12px;
+  border-radius:14px;
+  border:2px solid var(--field-border);
+  font-size:1.02rem;
+  outline:none;
   background: var(--field-bg);
-  color: rgba(17,24,39,0.95);
-
-  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+  color: rgba(17,24,39,0.96);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
 }
-input::placeholder, textarea::placeholder { color: rgba(17,24,39,0.45); font-weight: 800; }
-textarea { min-height: 86px; resize: vertical; }
+input::placeholder, textarea::placeholder{color:rgba(17,24,39,0.45);font-weight:850}
+textarea{min-height:86px;resize:vertical}
 
-/* Навигация по вопросам (липкая) */
-.qnav {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: rgba(255,255,255,0.72);
-  border: 1px solid rgba(255,255,255,0.35);
+/* панель навигации */
+.qnav{
+  position:sticky; top:0; z-index:5;
+  background: rgba(255,255,255,0.74);
+  border: 1px solid rgba(255,255,255,0.36);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-
-  padding: 10px;
-  border-radius: 18px;
-  margin-bottom: 12px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  border-radius:18px;
+  padding:10px;
+  margin-bottom:12px;
 }
+.qnav-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.qnav-row:last-child{margin-bottom:0}
+.qnav-title{font-weight:1000;color:rgba(17,24,39,0.85)}
+.qnav-actions{display:flex;gap:8px}
+.qnav-mini{
+  width:auto;margin:0;padding:10px 12px;border-radius:14px;font-size:.9rem;
+}
+.qsearch{flex:1;margin:0}
 
-.qnav-left { flex: 1; min-width: 0; }
-.qnav-title {
-  font-weight: 1000;
-  margin-bottom: 8px;
+/* chips */
+.qnav-chips{
+  display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;
+  -webkit-overflow-scrolling:touch;
+}
+.qchip{
+  flex:0 0 auto;
+  padding:8px 10px;
+  border-radius:999px;
+  border:2px solid rgba(79,70,229,0.25);
+  background: rgba(255,255,255,0.85);
+  font-weight:950;
   color: rgba(17,24,39,0.85);
+  cursor:pointer;
 }
-.qnav-chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-}
-.qchip {
-  flex: 0 0 auto;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 2px solid rgba(79,70,229,0.25);
-  background: rgba(255,255,255,0.8);
-  font-weight: 950;
-  color: rgba(17,24,39,0.85);
-  cursor: pointer;
-}
-.qchip.active {
+.qchip.active{
   border-color: rgba(79,70,229,0.75);
-  box-shadow: 0 6px 12px rgba(79,70,229,0.16);
+  box-shadow: 0 8px 14px rgba(79,70,229,0.16);
   color: rgba(79,70,229,1);
 }
-.qnav-add {
-  width: auto;
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-size: 0.95rem;
+
+/* аккордеон + drag */
+.qdetails{
+  background: rgba(249,250,251,0.92);
+  border: 1px solid rgba(229,231,235,0.96);
+  border-radius:18px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.06);
+}
+.qdetails[hidden-by-search="1"]{display:none}
+
+.qdetails summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  font-weight:1000;
+  padding:6px 2px;
+}
+.qdetails summary::-webkit-details-marker{display:none}
+
+.qsum-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+.qsum-title{font-size:1.05rem}
+.qsum-mini{
+  font-size:.85rem;color:rgba(17,24,39,0.6);font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width: 270px;
 }
 
-/* Аккордеон вопроса */
-.qdetails {
-  background: rgba(249,250,251,0.9);
-  border: 1px solid rgba(229,231,235,0.95);
-  border-radius: 18px;
-  padding: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 10px 16px rgba(0,0,0,0.06);
-}
-.qdetails summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 1000;
-  padding: 6px 2px;
-}
-.qdetails summary::-webkit-details-marker { display:none; }
-
-.qsum-left { display:flex; flex-direction: column; gap: 2px; }
-.qsum-title { font-size: 1.05rem; }
-.qsum-mini { font-size: 0.85rem; color: rgba(17,24,39,0.6); font-weight: 800; }
-
-.qremove {
-  width: auto;
-  padding: 10px 12px;
-  border-radius: 14px;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.options-wrap { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
-.option-row {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 10px;
-  align-items: center;
-}
-.option-row input[type="radio"] { width: 18px; height: 18px; }
-
-/* Таймер */
-#timer-display { margin-bottom: 14px; }
-.timer-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.timer-digits {
-  font-size: 3.8rem; /* В 2 раза больше */
-  font-weight: 1000;
-  color: #111827;
-  text-shadow:
-    0 2px 0 rgba(0,0,0,0.18),
-    0 14px 20px rgba(0,0,0,0.18);
-}
-.timer-sec { font-weight: 1000; color: rgba(17,24,39,0.75); }
-.timer-top.danger .timer-digits { color: var(--danger); }
-
-.timer-bar {
-  height: 12px;
+/* drag handle */
+.drag-handle{
+  width:auto;
+  margin:0;
+  padding:8px 10px;
+  border-radius:12px;
+  font-weight:1000;
   background: rgba(229,231,235,0.95);
-  border-radius: 999px;
-  overflow: hidden;
+  border: 1px solid rgba(156,163,175,0.55);
+  cursor: grab;
+  user-select:none;
+}
+.dragging{opacity:0.6}
+.drop-target{outline:2px dashed rgba(79,70,229,0.55); outline-offset:4px}
+
+.qremove{
+  width:auto;margin:0;padding:10px 12px;border-radius:14px;font-size:.95rem;
+}
+
+/* варианты */
+.options-wrap{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.option-row{
+  display:grid;
+  grid-template-columns:28px 1fr;
+  gap:10px;
+  align-items:center;
+}
+.option-row input[type="radio"]{width:18px;height:18px}
+
+/* GAME */
+#timer-display{margin-bottom:14px}
+.timer-top{
+  display:flex;align-items:baseline;justify-content:center;gap:10px;margin-bottom:10px
+}
+.timer-digits{
+  font-size:3.8rem; /* уже увеличено */
+  font-weight:1000;
+  color:#111827;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 14px 22px rgba(0,0,0,0.18);
+}
+.timer-sec{font-weight:1000;color:rgba(17,24,39,0.75)}
+.timer-top.danger .timer-digits{color:var(--danger)}
+.timer-bar{
+  height:12px;background:rgba(229,231,235,0.95);border-radius:999px;overflow:hidden;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
 }
-.timer-bar-fill {
-  height: 100%;
-  width: 100%;
-  background: var(--primary);
-  border-radius: 999px;
-  transition: width 0.08s linear;
+.timer-bar-fill{
+  height:100%;width:100%;background:var(--primary);border-radius:999px;transition:width .08s linear;
 }
-.timer-bar-fill.danger { background: var(--danger); }
-.timer-bar-fill.blink { animation: timerBlink 0.6s infinite; }
-@keyframes timerBlink { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+.timer-bar-fill.danger{background:var(--danger)}
+.timer-bar-fill.blink{animation:timerBlink .6s infinite}
+@keyframes timerBlink{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
 
-/* Вопрос в игре */
-.card {
-  background: rgba(243,244,246,0.9);
-  padding: 20px;
-  border-radius: 20px;
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 1.15rem;
-  font-weight: 1000;
-  margin-bottom: 18px;
+.card{
+  background:rgba(243,244,246,0.92);
+  padding:20px;border-radius:20px;min-height:100px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:1.15rem;font-weight:1000;margin-bottom:18px;
 }
 
-/* Ответы */
-.option-btn {
-  background: rgba(255,255,255,0.92);
-  border: 2px solid rgba(229,231,235,0.95);
-  box-shadow: 0 4px 0 rgba(229,231,235,0.95);
-  color: rgba(17,24,39,0.95);
-  margin-top: 10px;
+.option-btn{
+  background:rgba(255,255,255,0.92);
+  border:2px solid rgba(229,231,235,0.95);
+  box-shadow:0 4px 0 rgba(229,231,235,0.95);
+  color:rgba(17,24,39,0.95);
+  margin-top:10px;
 }
-.option-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(229,231,235,0.95); }
-.option-btn.correct {
-  background: var(--success) !important;
-  color: #fff !important;
-  border-color: var(--success-dark) !important;
-  box-shadow: 0 4px 0 var(--success-dark) !important;
+.option-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 rgba(229,231,235,0.95)}
+.option-btn.correct{background:var(--success)!important;color:#fff!important}
+.option-btn.wrong{background:var(--danger)!important;color:#fff!important}
+
+#post-answer-box{
+  margin-top:16px;
+  background:rgba(255,251,235,0.92);
+  padding:14px;border-radius:16px;border:1px solid rgba(253,230,138,0.95);
 }
-.option-btn.wrong {
-  background: var(--danger) !important;
-  color: #fff !important;
-  border-color: var(--danger-dark) !important;
-  box-shadow: 0 4px 0 var(--danger-dark) !important;
+.post-summary{font-weight:1000;color:rgba(17,24,39,0.9);margin-bottom:12px}
+.expl-area{
+  background:rgba(255,255,255,0.95);
+  border:1px solid rgba(253,230,138,0.95);
+  padding:12px;border-radius:14px;margin-bottom:12px
+}
+.post-actions{display:flex;gap:10px}
+.post-actions .btn{margin-bottom:0}
+
+.score-circle{
+  width:80px;height:80px;background:var(--primary);color:#fff;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:1000;
+  margin:0 auto 15px;
 }
 
-/* Пост-блок */
-#post-answer-box {
-  margin-top: 16px;
-  background: rgba(255, 251, 235, 0.92);
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(253,230,138,0.95);
-}
-.post-summary { font-weight: 1000; color: rgba(17,24,39,0.9); margin-bottom: 12px; }
-.expl-area {
-  background: rgba(255,255,255,0.95);
-  border: 1px solid rgba(253,230,138,0.95);
-  padding: 12px;
-  border-radius: 14px;
-  margin-bottom: 12px;
-}
-.post-actions { display: flex; gap: 10px; }
-.post-actions .btn { margin-bottom: 0; }
-
-/* Мои викторины */
-.myquizzes-list { display: flex; flex-direction: column; gap: 12px; }
-.quiz-item {
-  background: rgba(249,250,251,0.9);
-  border: 1px solid rgba(229,231,235,0.95);
-  border-radius: 16px;
-  padding: 12px;
-}
-.quiz-item .title { font-weight: 1000; margin-bottom: 6px; }
-.quiz-item .meta { font-size: 0.85rem; color: rgba(17,24,39,0.6); margin-bottom: 10px; }
-.quiz-item .actions { display: flex; gap: 10px; }
-.quiz-item .actions .btn { margin: 0; padding: 12px; font-size: 0.95rem; border-radius: 14px; }
-
-/* Инфо */
-.info-box {
-  margin-top: 14px;
-  background: rgba(239,246,255,0.92);
-  border: 1px solid rgba(191,219,254,0.95);
-  color: #1e3a8a;
-  padding: 12px;
-  border-radius: 16px;
-  font-weight: 900;
-  text-align: center;
+.info-box{
+  margin-top:14px;
+  background:rgba(239,246,255,0.92);
+  border:1px solid rgba(191,219,254,0.95);
+  color:#1e3a8a;padding:12px;border-radius:16px;font-weight:900;text-align:center;
 }
 
-/* Разбор */
-.review-block { margin-top: 18px; }
-.review-table-wrap { overflow-x: auto; border: 1px solid rgba(229,231,235,0.95); border-radius: 16px; }
-.review-table { width: 100%; border-collapse: collapse; min-width: 520px; }
-.review-table th, .review-table td { padding: 10px; border-bottom: 1px solid rgba(243,244,246,0.95); vertical-align: top; font-size: 0.9rem; }
-.review-table th { background: rgba(249,250,251,0.95); text-align: left; position: sticky; top: 0; z-index: 1; }
-.status-ok { color: var(--success-dark); font-weight: 1000; }
-.status-bad { color: var(--danger-dark); font-weight: 1000; }
-.status-skip { color: rgba(107,114,128,1); font-weight: 1000; }
-
-.score-circle {
-  width: 80px; height: 80px;
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  font-weight: 1000;
-  margin: 0 auto 15px;
+.myquizzes-list{display:flex;flex-direction:column;gap:12px}
+.quiz-item{
+  background:rgba(249,250,251,0.92);
+  border:1px solid rgba(229,231,235,0.96);
+  border-radius:16px;padding:12px
 }
+.quiz-item .title{font-weight:1000;margin-bottom:6px}
+.quiz-item .meta{font-size:.85rem;color:rgba(17,24,39,0.6);margin-bottom:10px}
+.quiz-item .actions{display:flex;gap:10px}
+.quiz-item .actions .btn{margin:0;padding:12px;font-size:.95rem;border-radius:14px}
 
-.hidden { display: none; }
+.review-block{margin-top:18px}
+.review-table-wrap{overflow-x:auto;border:1px solid rgba(229,231,235,0.95);border-radius:16px}
+.review-table{width:100%;border-collapse:collapse;min-width:520px}
+.review-table th,.review-table td{padding:10px;border-bottom:1px solid rgba(243,244,246,0.95);font-size:.9rem;vertical-align:top}
+.review-table th{background:rgba(249,250,251,0.95);position:sticky;top:0;z-index:1;text-align:left}
+.status-ok{color:#166534;font-weight:1000}
+.status-bad{color:#991b1b;font-weight:1000}
+.status-skip{color:#6b7280;font-weight:1000}
 
-@media (max-width: 480px) {
-  .post-actions { flex-direction: column; }
-  .quiz-item .actions { flex-direction: column; }
+@media (max-width:480px){
+  .post-actions{flex-direction:column}
+  .quiz-item .actions{flex-direction:column}
 }
