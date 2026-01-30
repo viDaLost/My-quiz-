@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор Викторин</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🏆 My Quiz App</h1>
+
+    <div id="home-screen">
+        <button onclick="showCreator()" class="btn primary">Создать викторину</button>
+        <p class="hint">Создайте тест и отправьте ссылку другу!</p>
+    </div>
+
+    <div id="creator-screen" class="hidden">
+        <h2>Настройки</h2>
+        <select id="quiz-mode">
+            <option value="classic">Классика (результат в конце)</option>
+            <option value="timer">На время (с таймером на вопрос)</option>
+            <option value="speed">Спидран (кто быстрее)</option>
+        </select>
+        
+        <div id="timer-setting" class="hidden">
+            <input type="number" id="time-limit" placeholder="Секунд на вопрос (например, 15)">
+        </div>
+
+        <div id="questions-container"></div>
+        
+        <button onclick="addQuestionField()" class="btn secondary">+ Добавить вопрос</button>
+        <hr>
+        <button onclick="generateLink()" class="btn primary">Создать ссылку</button>
+    </div>
+
+    <div id="link-screen" class="hidden">
+        <h3>Викторина готова!</h3>
+        <p>Скопируйте ссылку ниже и отправьте друзьям:</p>
+        <textarea id="share-link" readonly></textarea>
+        <button onclick="copyLink()" class="btn">Копировать</button>
+        <button onclick="location.reload()" class="btn secondary">На главную</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div id="timer-display" class="hidden">⏳ <span id="time-left"></span></div>
+        <h3 id="question-text"></h3>
+        <div id="options-container"></div>
+        
+        <div id="explanation-box" class="hidden">
+            <strong>Пояснение:</strong> <span id="explanation-text"></span>
+            <br>
+            <button onclick="nextQuestion()" class="btn next-btn">Далее ➡</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>Финиш! 🏁</h2>
+        <p>Ваш результат: <span id="score"></span></p>
+        <p id="speed-result" class="hidden"></p>
+        <button onclick="location.href = window.location.pathname" class="btn primary">Создать свою</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
