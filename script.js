@@ -1,4 +1,4 @@
-const COMPLETED_PREFIX = 'quiz_master_completed:';  // блок повтора для чужих викторин
+const COMPLETED_PREFIX = 'quiz_master_completed:';
 const MY_QUIZZES_KEY = 'quiz_master_my_quizzes';
 
 let currentQuiz = null;
@@ -184,7 +184,7 @@ function addQuestionField() {
   buildQuestionNav();
   applyQuestionSearch();
 
-  details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  details.scrollIntoView({ behavior: 'smooth', block: 'start', scrollMarginTop: '80px' }); // добавлено
 }
 
 function wireTouchSortHandle(handleEl, detailsEl) {
@@ -366,7 +366,7 @@ function jumpToQuestion(idx) {
   blocks.forEach((d) => (d.open = false));
   target.open = true;
 
-  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  target.scrollIntoView({ behavior: 'smooth', block: 'start', scrollMarginTop: '80px' });
   buildQuestionNav();
 }
 
@@ -494,7 +494,7 @@ function generateLink() {
 
   const quizObj = {
     v: 3,
-    title,
+    title: title || `Викторина (${data.length} вопр.)`, // исправлено: всегда есть название
     m: mode,
     t: (mode === 'timer') ? timeLimit : 0,
     tt: (mode === 'speed') ? totalTimeLimit : 0, // total time
@@ -506,7 +506,7 @@ function generateLink() {
 
   saveMyQuiz({
     encoded,
-    title: title || `Викторина (${data.length} вопр.)`,
+    title: quizObj.title,
     createdAt: Date.now()
   });
 
@@ -673,7 +673,7 @@ function showQuestion() {
   // SPEED MODE: total time
   if (currentQuiz.m === 'speed') {
     // запускаем общий таймер один раз
-    if (!window.__speedTimerStarted) {
+    if (currentQIndex === 0 && !window.__speedTimerStarted) { // исправлено: только на первом вопросе
       window.__speedTimerStarted = true;
       startTimer(Number(currentQuiz.tt || 0), { mode: 'total' });
     }
@@ -946,3 +946,4 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
