@@ -2,37 +2,28 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#4f46e5" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Quiz Master</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
-<body class="home">
+<body class="show-bg">
 
-  <!-- декоративный фон (без ❓) -->
-  <div class="bg-decor" aria-hidden="true">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <div class="grid"></div>
-  </div>
+  <!-- фон ❓ -->
+  <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
 
   <div class="container" id="main-container">
     <!-- HOME -->
     <div id="home-screen" class="screen fade-in">
-      <div class="hero">
-        <div class="hero-title">Quiz Master</div>
-        <div class="hero-subtitle">Создавай викторины и делись ссылкой </div>
+      <div class="brand">
+        <div class="brand-title">Quiz Master</div>
+        <div class="brand-subtitle">Создавай и побеждай!</div>
       </div>
 
-      <div class="home-card">
-        <button onclick="showCreator()" class="btn primary">Создать викторину1</button>
-        <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-        </div>
-      </div>
+      <button onclick="showCreator()" class="btn primary">Создать викторину</button>
+      <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
+      <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
     </div>
 
     <!-- MY QUIZZES -->
@@ -46,92 +37,39 @@
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
-      <!--
-        ОПТИМИЗИРОВАННЫЙ КОНТРОЛ-БАР:
-        - на телефоне всё в колонку, ничего не съезжает
-        - на планшете/ноутбуке аккуратно в строки
-        Вся адаптация делается в style.css по этим классам
-      -->
-      <section class="qnav" id="question-nav" aria-label="Панель вопросов">
-        <!-- верх: заголовок + компактная кнопка добавления -->
-        <div class="qnav-header">
-          <div class="qnav-title">Вопросы</div>
-
-          <!-- компактная кнопка (иконка + текст), чтобы не расползалась -->
-          <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">
-            <span class="qnav-add-ico" aria-hidden="true">＋</span>
-            <span class="qnav-add-text">Вопрос</span>
-          </button>
-        </div>
-
-        <!-- поиск: всегда на всю ширину -->
-        <div class="qnav-search">
-          <input
-            id="question-search"
-            class="qsearch"
-            type="text"
-            placeholder="Поиск по вопросам (текст/варианты)…"
-            oninput="filterQuestions()"
-            autocomplete="off"
-          />
-        </div>
-
-        <!-- действия: на телефоне две кнопки в 2 колонки, на широком — в одну строку -->
-        <div class="qnav-actions">
-          <button class="btn secondary qnav-mini" type="button" onclick="expandAll(true)">
-            Развернуть все
-          </button>
-          <button class="btn secondary qnav-mini" type="button" onclick="expandAll(false)">
-            Свернуть все
-          </button>
-        </div>
-
-        <!-- навигация: чипсы Вопрос 1/2/3... (с переносом строк на телефоне) -->
-        <div class="qnav-chips-wrap" aria-label="Навигация по вопросам">
+      <!-- Панель навигации по вопросам -->
+      <div class="qnav" id="question-nav">
+        <div class="qnav-left">
+          <div class="qnav-title">Вопросы:</div>
           <div class="qnav-chips" id="qnav-chips"></div>
         </div>
+        <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+      </div>
 
-        <div class="qnav-hint">
-        </div>
-      </section>
-
-      <!-- настройки викторины -->
       <div class="field">
-        <label>Название викторины :</label>
-        <input type="text" id="quiz-title" placeholder="Впишите название" maxlength="60" />
+        <label>Название (для «Моих викторин»):</label>
+        <input type="text" id="quiz-title" placeholder="Например: Фильмы / Игры" maxlength="60" />
       </div>
 
       <div class="field">
         <label>Режим игры:</label>
-        <select id="quiz-mode" onchange="onModeChange()">
+        <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">На общее время</option>
+          <option value="speed">Спидран (на общее время)</option>
         </select>
       </div>
 
       <div id="timer-setting" class="hidden field">
-        <label>Секунд на ответ (обязательно):</label>
-        <input type="number" id="time-limit" placeholder="Например: 15" min="1" inputmode="numeric" />
-        <div class="field-hint">Без этого нельзя сгенерировать ссылку.</div>
+        <label>Секунд на ответ:</label>
+        <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
       </div>
 
-      <div id="speed-setting" class="hidden field">
-        <label>Общее время на всю викторину (обязательно):</label>
-        <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" inputmode="numeric" />
-        <div class="field-hint">Сколько секунд даётся на ответы на все вопросы.</div>
-      </div>
-
-      <!-- вопросы (drag&drop) -->
-      <div id="questions-container" class="questions-container" aria-label="Список вопросов"></div>
+      <div id="questions-container"></div>
 
       <hr style="margin: 16px 0; opacity: 0.2;" />
-
-      <!-- кнопки внизу: на телефоне колонка, на широком можно в ряд через CSS -->
-      <div class="creator-footer">
-        <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
-        <button onclick="goHome()" class="btn secondary">На главную</button>
-      </div>
+      <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
+      <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
     <!-- LINK -->
@@ -146,7 +84,7 @@
     <!-- GAME -->
     <div id="game-screen" class="screen hidden">
       <div id="timer-display" class="hidden" aria-live="polite">
-        <div class="timer-top" id="timer-top">
+        <div class="timer-top">
           <span class="timer-icon">⏳</span>
           <span id="time-left" class="timer-digits">0</span>
           <span class="timer-sec">сек</span>
@@ -219,4 +157,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
