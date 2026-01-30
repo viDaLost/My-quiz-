@@ -15,6 +15,24 @@ let allowRepeat = false;
 
 // DnD
 let dragId = null;
+const IS_TOUCH = (() => {
+  try {
+    return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return ('ontouchstart' in window);
+  }
+})();
+
+// Touch-sort (Pointer Events)
+let touchDrag = {
+  active: false,
+  el: null,
+  placeholder: null,
+  startY: 0,
+  offsetY: 0,
+  pointerId: null,
+  host: null,
+};
 
 window.onload = () => {
   wireModeSelect();
@@ -62,6 +80,11 @@ function refreshModeFields() {
   document.getElementById('speed-setting').classList.toggle('hidden', mode !== 'speed');
 }
 
+// совместимость с inline onchange="onModeChange()" в HTML
+function onModeChange() {
+  refreshModeFields();
+}
+
 function resetCreatorForm() {
   document.getElementById('quiz-title').value = '';
   document.getElementById('quiz-mode').value = 'classic';
@@ -97,13 +120,19 @@ function addQuestionField() {
   details.dataset.blockid = blockId;
   details.dataset.qindex = String(qIndex);
 
-  // DnD: draggable wrapper
-  details.draggable = true;
-  details.addEventListener('dragstart', (e) => onDragStart(e, blockId));
-  details.addEventListener('dragover', (e) => onDragOver(e, blockId));
-  details.addEventListener('dragleave', () => details.classList.remove('drop-target'));
-  details.addEventListener('drop', (e) => onDrop(e, blockId));
-  details.addEventListener('dragend', () => cleanupDragStyles());
+  // DnD:
+  // - desktop: HTML5 drag & drop (мышь)
+  // - touch: Pointer Events сортировка по drag-handle
+  if (!IS_TOUCH) {
+    details.draggable = true;
+    details.addEventListener('dragstart', (e) => onDragStart(e, blockId));
+    details.addEventListener('dragover', (e) => onDragOver(e, blockId));
+    details.addEventListener('dragleave', () => details.classList.remove('drop-target'));
+    details.addEventListener('drop', (e) => onDrop(e, blockId));
+    details.addEventListener('dragend', () => cleanupDragStyles());
+  } else {
+    details.draggable = false;
+  }
 
   details.innerHTML = `
     <summary onclick="setActiveChipByOpen();">
@@ -142,6 +171,12 @@ function addQuestionField() {
 
   container.appendChild(details);
 
+  // Touch DnD hook
+  if (IS_TOUCH) {
+    const handle = details.querySelector('.drag-handle');
+    if (handle) wireTouchSortHandle(handle, details);
+  }
+
   addOption(blockId);
   addOption(blockId);
 
@@ -150,6 +185,101 @@ function addQuestionField() {
   applyQuestionSearch();
 
   details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function wireTouchSortHandle(handleEl, detailsEl) {
+  // важное: иначе Safari скроллит вместо перетаскивания
+  handleEl.style.touchAction = 'none';
+  handleEl.addEventListener('pointerdown', (e) => {
+    // только основной палец/кнопка
+    if (e.button !== undefined && e.button !== 0) return;
+    if (touchDrag.active) return;
+
+    const host = document.getElementById('questions-container');
+    if (!host) return;
+
+    touchDrag.active = true;
+    touchDrag.el = detailsEl;
+    touchDrag.host = host;
+    touchDrag.pointerId = e.pointerId;
+
+    const rect = detailsEl.getBoundingClientRect();
+    touchDrag.startY = e.clientY;
+    touchDrag.offsetY = e.clientY - rect.top;
+
+    // placeholder
+    const ph = document.createElement('div');
+    ph.className = 'qplaceholder';
+    ph.style.height = rect.height + 'px';
+    touchDrag.placeholder = ph;
+    detailsEl.parentNode.insertBefore(ph, detailsEl.nextSibling);
+
+    // фиксируем элемент поверх
+    detailsEl.classList.add('touch-dragging');
+    detailsEl.style.width = rect.width + 'px';
+    detailsEl.style.left = rect.left + 'px';
+    detailsEl.style.top = rect.top + 'px';
+    detailsEl.style.position = 'fixed';
+    detailsEl.style.zIndex = 9999;
+
+    try { handleEl.setPointerCapture(e.pointerId); } catch {}
+    e.preventDefault();
+  });
+
+  handleEl.addEventListener('pointermove', (e) => {
+    if (!touchDrag.active || e.pointerId !== touchDrag.pointerId) return;
+    const el = touchDrag.el;
+    const ph = touchDrag.placeholder;
+    const host = touchDrag.host;
+    if (!el || !ph || !host) return;
+
+    const y = e.clientY - touchDrag.offsetY;
+    el.style.top = y + 'px';
+
+    // авто-скролл внутри контейнера
+    const hostRect = host.getBoundingClientRect();
+    const edge = 64;
+    if (e.clientY < hostRect.top + edge) host.scrollTop -= 10;
+    if (e.clientY > hostRect.bottom - edge) host.scrollTop += 10;
+
+    // найти ближайший блок под пальцем
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const over = under ? under.closest('.qdetails') : null;
+    if (!over || over === el) return;
+
+    const overRect = over.getBoundingClientRect();
+    const before = e.clientY < (overRect.top + overRect.height / 2);
+    host.insertBefore(ph, before ? over : over.nextSibling);
+  });
+
+  const end = (e) => {
+    if (!touchDrag.active || e.pointerId !== touchDrag.pointerId) return;
+    const el = touchDrag.el;
+    const ph = touchDrag.placeholder;
+    const host = touchDrag.host;
+    if (el && ph && host) {
+      // вернуть в поток
+      el.classList.remove('touch-dragging');
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.width = '';
+      el.style.zIndex = '';
+      host.insertBefore(el, ph);
+      ph.remove();
+      renumberQuestions();
+      buildQuestionNav();
+      applyQuestionSearch();
+    }
+    touchDrag.active = false;
+    touchDrag.el = null;
+    touchDrag.placeholder = null;
+    touchDrag.pointerId = null;
+    touchDrag.host = null;
+  };
+
+  handleEl.addEventListener('pointerup', end);
+  handleEl.addEventListener('pointercancel', end);
 }
 
 function removeQuestion(blockId) {
@@ -262,6 +392,11 @@ function applyQuestionSearch() {
     const match = text.includes(q) || opts.includes(q) || mini.includes(q);
     b.setAttribute('hidden-by-search', match ? '0' : '1');
   });
+}
+
+// совместимость с разметкой (input oninput="filterQuestions()")
+function filterQuestions() {
+  applyQuestionSearch();
 }
 
 /* =========================
@@ -657,7 +792,7 @@ function startTimer(sec, info = { mode: 'perQuestion' }) {
   disp.classList.remove('hidden');
   fill.style.width = '100%';
   fill.classList.remove('danger', 'blink');
-  top.classList.remove('danger');
+  if (top) top.classList.remove('danger');
 
   const startedAt = Date.now();
   const durationMs = sec * 1000;
@@ -688,7 +823,7 @@ function startTimer(sec, info = { mode: 'perQuestion' }) {
 
     if (pct <= 20 || leftSec <= 3) {
       fill.classList.add('danger');
-      top.classList.add('danger');
+      if (top) top.classList.add('danger');
     }
     if (leftSec <= 3) fill.classList.add('blink');
 
