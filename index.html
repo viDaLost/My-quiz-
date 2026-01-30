@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏆 Quiz Master Pro</title>
+    <title>🏆 Quiz Master 3D</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
 <div class="container" id="main-container">
-    <div id="home-screen" class="fade-in content-center">
-        <header>
-            <h1>Quiz Master</h1>
-            <p class="hint">Создавай и побеждай!</p>
-        </header>
+    <header>
+        <h1>Quiz Master</h1>
+        <p class="hint" id="main-hint">Создавай и побеждай!</p>
+    </header>
+
+    <div id="home-screen" class="fade-in">
         <button onclick="showCreator()" class="btn primary">Создать викторину</button>
-        <p class="small-text">У вас есть ссылка? Перейдите по ней!</p>
+        <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
     </div>
 
-    <div id="creator-screen" class="hidden fade-in">
-        <h2>Настройка</h2>
+    <div id="creator-screen" class="hidden">
         <div class="field">
             <label>Режим игры:</label>
             <select id="quiz-mode">
@@ -29,61 +29,100 @@
                 <option value="speed">Спидран (на общее время)</option>
             </select>
         </div>
-        
+
         <div id="timer-setting" class="hidden field">
             <label>Секунд на ответ:</label>
             <input type="number" id="time-limit" placeholder="Например: 15" min="1">
         </div>
 
         <div id="questions-container"></div>
-        
+
         <button onclick="addQuestionField()" class="btn secondary">+ Добавить вопрос</button>
-        <button onclick="generateLink()" class="btn primary" style="margin-top: 10px;">Генерировать ссылку</button>
+        <hr style="margin: 20px 0; opacity: 0.2;">
+        <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
     </div>
 
-    <div id="link-screen" class="hidden content-center">
+    <div id="link-screen" class="hidden">
         <h3>Готово! 🚀</h3>
+        <p>Поделись ссылкой с друзьями:</p>
         <textarea id="share-link" readonly></textarea>
         <button onclick="copyLink()" class="btn primary">Копировать ссылку</button>
         <button onclick="location.reload()" class="btn secondary">На главную</button>
     </div>
 
     <div id="game-screen" class="hidden">
-        <div id="timer-container" class="hidden">
-            <div id="timer-bar"></div>
+        <div id="timer-display" class="hidden" aria-live="polite">
+            <div class="timer-top">
+                <span class="timer-icon">⏳</span>
+                <span class="timer-text"><span id="time-left">0</span> сек</span>
+            </div>
+            <div class="timer-bar" role="progressbar" aria-label="Осталось времени">
+                <div id="timer-bar-fill" class="timer-bar-fill"></div>
+            </div>
         </div>
+
         <div class="card" id="question-card">
             <p id="question-text"></p>
         </div>
+
         <div id="options-container"></div>
-        
+
         <div id="explanation-box" class="hidden">
             <div class="expl-content">
-                <p id="explanation-status"></p>
+                <strong>Пояснение:</strong>
                 <p id="explanation-text"></p>
             </div>
-            <button id="next-btn" onclick="nextQuestion()" class="btn primary">Далее ➡</button>
+            <button onclick="nextQuestion()" class="btn primary">Далее ➡</button>
         </div>
     </div>
 
     <div id="result-screen" class="hidden">
-        <h2>Ваш результат</h2>
+        <h2>Финиш! 🏁</h2>
         <div class="score-circle">
             <span id="score-val">0</span>
         </div>
         <p id="speed-result" class="hidden"></p>
-        
-        <div id="save-score-block" class="field">
-            <input type="text" id="player-name" placeholder="Твоё имя">
-            <button onclick="saveScore()" class="btn primary">Сохранить</button>
+
+        <div id="answer-review" class="review-block hidden">
+            <h3>🧾 Разбор ответов</h3>
+            <div class="review-table-wrap">
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Вопрос</th>
+                            <th>Твой ответ</th>
+                            <th>Правильный</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="review-body"></tbody>
+                </table>
+            </div>
         </div>
 
-        <div id="quiz-report" class="report-container">
-            <h3>Детальный отчет:</h3>
-            <div id="report-list"></div>
+        <div id="already-completed" class="hidden info-box">
+            Вы уже проходили эту викторину на этом устройстве. Показаны сохранённые результаты.
         </div>
 
-        <button onclick="location.href = window.location.pathname" class="btn secondary" style="margin-top: 20px;">Создать свою</button>
+        <div id="save-score-block" class="field" style="margin-top: 20px;">
+            <input type="text" id="player-name" placeholder="Твоё имя для рекордов">
+            <button onclick="saveScore()" class="btn primary">В таблицу лидеров</button>
+        </div>
+
+        <h3>🏆 Топ-5 Рекордов</h3>
+        <table class="leaderboard">
+            <thead>
+                <tr>
+                    <th>Игрок</th>
+                    <th>Очки</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+
+        <button onclick="location.href = window.location.pathname" class="btn secondary" style="margin-top: 20px;">В главное меню</button>
     </div>
 </div>
 
