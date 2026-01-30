@@ -2,64 +2,95 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Конструктор Викторин</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏆 Quiz Master 3D</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-<div class="container">
-    <h1>🏆 My Quiz App</h1>
+<div class="container" id="main-container">
+    <header>
+        <h1>Quiz Master</h1>
+        <p class="hint" id="main-hint">Создавай и побеждай!</p>
+    </header>
 
-    <div id="home-screen">
+    <div id="home-screen" class="fade-in">
         <button onclick="showCreator()" class="btn primary">Создать викторину</button>
-        <p class="hint">Создайте тест и отправьте ссылку другу!</p>
+        <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
     </div>
 
     <div id="creator-screen" class="hidden">
-        <h2>Настройки</h2>
-        <select id="quiz-mode">
-            <option value="classic">Классика (результат в конце)</option>
-            <option value="timer">На время (с таймером на вопрос)</option>
-            <option value="speed">Спидран (кто быстрее)</option>
-        </select>
+        <div class="field">
+            <label>Режим игры:</label>
+            <select id="quiz-mode">
+                <option value="classic">Классика (результат в конце)</option>
+                <option value="timer">Таймер на каждый вопрос</option>
+                <option value="speed">Спидран (на общее время)</option>
+            </select>
+        </div>
         
-        <div id="timer-setting" class="hidden">
-            <input type="number" id="time-limit" placeholder="Секунд на вопрос (например, 15)">
+        <div id="timer-setting" class="hidden field">
+            <label>Секунд на ответ:</label>
+            <input type="number" id="time-limit" placeholder="Например: 15" min="1">
         </div>
 
         <div id="questions-container"></div>
         
         <button onclick="addQuestionField()" class="btn secondary">+ Добавить вопрос</button>
-        <hr>
-        <button onclick="generateLink()" class="btn primary">Создать ссылку</button>
+        <hr style="margin: 20px 0; opacity: 0.2;">
+        <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
     </div>
 
     <div id="link-screen" class="hidden">
-        <h3>Викторина готова!</h3>
-        <p>Скопируйте ссылку ниже и отправьте друзьям:</p>
+        <h3>Готово! 🚀</h3>
+        <p>Поделись ссылкой с друзьями:</p>
         <textarea id="share-link" readonly></textarea>
-        <button onclick="copyLink()" class="btn">Копировать</button>
+        <button onclick="copyLink()" class="btn primary">Копировать ссылку</button>
         <button onclick="location.reload()" class="btn secondary">На главную</button>
     </div>
 
     <div id="game-screen" class="hidden">
         <div id="timer-display" class="hidden">⏳ <span id="time-left"></span></div>
-        <h3 id="question-text"></h3>
+        <div class="card" id="question-card">
+            <p id="question-text"></p>
+        </div>
         <div id="options-container"></div>
         
         <div id="explanation-box" class="hidden">
-            <strong>Пояснение:</strong> <span id="explanation-text"></span>
-            <br>
-            <button onclick="nextQuestion()" class="btn next-btn">Далее ➡</button>
+            <div class="expl-content">
+                <strong>Пояснение:</strong> 
+                <p id="explanation-text"></p>
+            </div>
+            <button onclick="nextQuestion()" class="btn primary">Далее ➡</button>
         </div>
     </div>
 
     <div id="result-screen" class="hidden">
         <h2>Финиш! 🏁</h2>
-        <p>Ваш результат: <span id="score"></span></p>
+        <div class="score-circle">
+            <span id="score-val">0</span>
+        </div>
         <p id="speed-result" class="hidden"></p>
-        <button onclick="location.href = window.location.pathname" class="btn primary">Создать свою</button>
+        
+        <div id="save-score-block" class="field" style="margin-top: 20px;">
+            <input type="text" id="player-name" placeholder="Твоё имя для рекордов">
+            <button onclick="saveScore()" class="btn primary">В таблицу лидеров</button>
+        </div>
+
+        <h3>🏆 Топ-5 Рекордов</h3>
+        <table class="leaderboard">
+            <thead>
+                <tr>
+                    <th>Игрок</th>
+                    <th>Очки</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+
+        <button onclick="location.href = window.location.pathname" class="btn secondary" style="margin-top: 20px;">В главное меню</button>
     </div>
 </div>
 
