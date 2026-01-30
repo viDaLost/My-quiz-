@@ -10,7 +10,7 @@
 </head>
 <body class="show-bg">
 
-  <!-- Фон ❓ -->
+  <!-- фон ❓ -->
   <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
 
   <div class="container" id="main-container">
@@ -18,12 +18,12 @@
     <div id="home-screen" class="screen fade-in">
       <div class="brand">
         <div class="brand-title">Quiz Master</div>
-        <div class="brand-subtitle">Создавай и побеждай!</div>
+        <div class="brand-subtitle">Создавай викторины и делись ими!</div>
       </div>
 
       <button onclick="showCreator()" class="btn primary">Создать викторину</button>
       <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-      <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
+      <p class="small-text"></p>
     </div>
 
     <!-- MY QUIZZES -->
@@ -37,6 +37,15 @@
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
+      <!-- Панель навигации по вопросам -->
+      <div class="qnav" id="question-nav">
+        <div class="qnav-left">
+          <div class="qnav-title">Вопросы:</div>
+          <div class="qnav-chips" id="qnav-chips"></div>
+        </div>
+        <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+      </div>
+
       <div class="field">
         <label>Название (для «Моих викторин»):</label>
         <input type="text" id="quiz-title" placeholder="Например: Фильмы / Игры" maxlength="60" />
@@ -47,7 +56,7 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">Спидран (на общее время)</option>
+          <option value="speed">Таймер на все вопросы (на общее время)</option>
         </select>
       </div>
 
@@ -58,8 +67,7 @@
 
       <div id="questions-container"></div>
 
-      <button onclick="addQuestionField()" class="btn secondary">+ Добавить вопрос</button>
-      <hr style="margin: 20px 0; opacity: 0.2;" />
+      <hr style="margin: 16px 0; opacity: 0.2;" />
       <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
       <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
@@ -93,7 +101,6 @@
 
       <div id="options-container"></div>
 
-      <!-- блок после ответа -->
       <div id="post-answer-box" class="hidden">
         <div class="post-summary" id="post-summary"></div>
 
