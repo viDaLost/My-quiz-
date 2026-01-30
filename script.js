@@ -19,10 +19,6 @@ let questionLocked = false;
 let answersLog = [];
 let allowRepeat = false;
 
-// total timer state
-let totalTimerStartedAt = 0;
-let totalDurationMs = 0;
-
 // -------------------------
 // BOOT
 // -------------------------
@@ -47,11 +43,17 @@ function setActiveScreen(id) {
     'myquizzes-screen',
     'creator-screen',
     'link-screen',
-    'intro-screen',
     'game-screen',
-    'result-screen'
+    'result-screen',
   ];
-  ids.forEach((x) => document.getElementById(x).classList.toggle('hidden', x !== id));
+  ids.forEach((x) => {
+    const el = document.getElementById(x);
+    if (el) el.classList.toggle('hidden', x !== id);
+  });
+
+  // классы могли использоваться в старом дизайне — оставляем, но фон ❓ отключён CSS
+  document.body.classList.toggle('show-bg', id === 'home-screen');
+  document.body.classList.toggle('home', id === 'home-screen');
 }
 
 function goHome() {
@@ -69,25 +71,19 @@ function goHomeClearHash() {
 // -------------------------
 function wireModeSelect() {
   const el = document.getElementById('quiz-mode');
-  const per = document.getElementById('timer-setting');
-  const tot = document.getElementById('total-setting');
-
-  const apply = (mode) => {
-    per.classList.toggle('hidden', mode !== 'timer');
-    tot.classList.toggle('hidden', mode !== 'total');
-  };
-
-  apply(el.value);
+  if (!el) return;
 
   el.onchange = (e) => {
-    apply(e.target.value);
+    const ts = document.getElementById('timer-setting');
+    if (!ts) return;
+    ts.classList.toggle('hidden', e.target.value !== 'timer');
   };
 }
 
 function showCreator() {
   setActiveScreen('creator-screen');
   const container = document.getElementById('questions-container');
-  if (container.children.length === 0) addQuestionField();
+  if (container && container.children.length === 0) addQuestionField();
   buildQuestionNav();
 }
 
@@ -116,21 +112,21 @@ function addQuestionField() {
       </button>
     </summary>
 
-    <div style="margin-top: 10px;">
+    <div class="qbody">
       <div class="field">
         <label>Текст вопроса:</label>
         <input type="text" class="q-text" placeholder="Текст" oninput="updateMini('${blockId}')"/>
       </div>
 
-      <div class="field" style="margin-top: 6px;">
+      <div class="field">
         <label>Варианты (отметь правильный слева):</label>
         <div class="options-wrap" data-options></div>
-        <button type="button" class="btn secondary"
-          style="margin-top:10px; padding:12px; font-size:0.95rem; border-radius:14px;"
+
+        <button type="button" class="btn secondary opt-add"
           onclick="addOption('${blockId}')">+ Добавить вариант (до 5)</button>
       </div>
 
-      <div class="field" style="margin-top: 10px;">
+      <div class="field">
         <label>Пояснение (покажется только по кнопке в игре):</label>
         <textarea class="q-expl" placeholder="Например: потому что ..."></textarea>
       </div>
@@ -146,6 +142,7 @@ function addQuestionField() {
   renumberQuestions();
   buildQuestionNav();
 
+  // прокрутить к новому вопросу
   details.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -167,6 +164,9 @@ function renumberQuestions() {
     // радио-группа уникальна на вопрос
     const radios = b.querySelectorAll('input[type="radio"]');
     radios.forEach((r) => (r.name = `correct-${idx}`));
+
+    // перенумеровать плейсхолдеры вариантов
+    renumberOptions(b);
   });
 }
 
@@ -179,57 +179,80 @@ function addOption(blockId) {
   const rows = wrap.querySelectorAll('.option-row');
   if (rows.length >= 5) return;
 
-  const optIndex = rows.length;
+  const optId = `opt-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
   const row = document.createElement('div');
   row.className = 'option-row';
+  row.dataset.optid = optId;
+
   row.innerHTML = `
-    <input type="radio" name="correct-${qIndex}" value="${optIndex}" aria-label="Правильный вариант" />
-    <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}" oninput="updateMini('${blockId}')"/>
-    <button type="button" class="opt-del" aria-label="Удалить вариант" title="Удалить вариант"
-      onclick="removeOption(this, '${blockId}'); event.stopPropagation();">✕</button>
+    <label class="correct-pick" title="Отметить как правильный">
+      <input type="radio" name="correct-${qIndex}" value="0" aria-label="Правильный вариант" />
+      <span class="cp-ui" aria-hidden="true">
+        <span class="cp-icon">✓</span>
+      </span>
+    </label>
+
+    <input type="text" class="opt-text" placeholder="Вариант ответа" oninput="updateMini('${blockId}')"/>
+
+    <button type="button" class="opt-del" aria-label="Удалить вариант"
+      onclick="removeOption('${blockId}', '${optId}')">
+      ✕
+    </button>
   `;
+
   wrap.appendChild(row);
 
+  // после добавления — корректно проставить value и placeholder
+  renumberOptions(block);
   updateMini(blockId);
 }
 
-function removeOption(btnEl, blockId) {
+function removeOption(blockId, optId) {
   const block = document.querySelector(`.qdetails[data-blockid="${blockId}"]`);
   if (!block) return;
 
   const wrap = block.querySelector('[data-options]');
   const rows = [...wrap.querySelectorAll('.option-row')];
-
   if (rows.length <= 2) {
-    alert('Должно быть минимум 2 варианта.');
+    alert('Вопрос должен иметь минимум 2 варианта.');
     return;
   }
 
-  const row = btnEl.closest('.option-row');
+  const row = wrap.querySelector(`.option-row[data-optid="${optId}"]`);
   if (!row) return;
 
-  // если удаляем выбранный правильный — сбросим выбор
+  // если удаляем отмеченный правильный — снимаем выбор
   const radio = row.querySelector('input[type="radio"]');
-  const wasChecked = radio && radio.checked;
+  const wasChecked = !!radio?.checked;
 
   row.remove();
 
-  // переиндексация value + placeholder
-  const qIndex = Number(block.dataset.qindex || 0);
-  const newRows = [...wrap.querySelectorAll('.option-row')];
-  newRows.forEach((r, idx) => {
-    const rr = r.querySelector('input[type="radio"]');
-    const tt = r.querySelector('.opt-text');
-    if (rr) {
-      rr.name = `correct-${qIndex}`;
-      rr.value = String(idx);
-      if (wasChecked) rr.checked = false;
-    }
-    if (tt) tt.placeholder = `Вариант ответа ${idx + 1}`;
-  });
+  if (wasChecked) {
+    const radios = wrap.querySelectorAll('input[type="radio"]');
+    radios.forEach((r) => (r.checked = false));
+  }
 
+  renumberOptions(block);
   updateMini(blockId);
+}
+
+function renumberOptions(block) {
+  const wrap = block.querySelector('[data-options]');
+  if (!wrap) return;
+
+  const rows = [...wrap.querySelectorAll('.option-row')];
+  const qIndex = Number(block.dataset.qindex || 0);
+
+  rows.forEach((row, idx) => {
+    const radio = row.querySelector('input[type="radio"]');
+    const input = row.querySelector('.opt-text');
+    if (radio) {
+      radio.name = `correct-${qIndex}`;
+      radio.value = String(idx);
+    }
+    if (input) input.placeholder = `Вариант ответа ${idx + 1}`;
+  });
 }
 
 function updateMini(blockId) {
@@ -239,7 +262,7 @@ function updateMini(blockId) {
 
   const qText = (block.querySelector('.q-text')?.value || '').trim();
   const opts = [...block.querySelectorAll('.opt-text')]
-    .map(x => (x.value || '').trim())
+    .map((x) => (x.value || '').trim())
     .filter(Boolean);
 
   const title = qText ? qText : 'Без текста вопроса';
@@ -259,16 +282,17 @@ function buildQuestionNav() {
     return;
   }
 
-  const openIdx = blocks.findIndex((b) => b.open);
-  const activeIndex = openIdx >= 0 ? openIdx : 0;
+  const activeIndex = blocks.findIndex((b) => b.open) >= 0 ? blocks.findIndex((b) => b.open) : 0;
 
-  chipsHost.innerHTML = blocks.map((b, idx) => {
-    const blockId = b.dataset.blockid;
-    const mini = document.getElementById(`qmini-${blockId}`)?.textContent || '';
-    const label = `Вопрос ${idx + 1}`;
-    const active = idx === activeIndex ? 'active' : '';
-    return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">${label}</button>`;
-  }).join('');
+  chipsHost.innerHTML = blocks
+    .map((b, idx) => {
+      const blockId = b.dataset.blockid;
+      const mini = document.getElementById(`qmini-${blockId}`)?.textContent || '';
+      const label = `Вопрос ${idx + 1}`;
+      const active = idx === activeIndex ? 'active' : '';
+      return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">${label}</button>`;
+    })
+    .join('');
 }
 
 function jumpToQuestion(idx) {
@@ -286,22 +310,11 @@ function jumpToQuestion(idx) {
 function generateLink() {
   const mode = document.getElementById('quiz-mode').value;
   const timeLimit = Number(document.getElementById('time-limit').value || 0);
-  const totalTimeLimit = Number(document.getElementById('total-time-limit').value || 0);
   const title = (document.getElementById('quiz-title').value || '').trim();
 
   const blocks = [...document.querySelectorAll('.qdetails')];
   if (blocks.length === 0) {
     alert('Добавь хотя бы один вопрос.');
-    return;
-  }
-
-  if (mode === 'timer' && (!timeLimit || timeLimit <= 0)) {
-    alert('Укажи секунды на ответ (на каждый вопрос).');
-    return;
-  }
-
-  if (mode === 'total' && (!totalTimeLimit || totalTimeLimit <= 0)) {
-    alert('Укажи секунды на всю викторину.');
     return;
   }
 
@@ -316,21 +329,16 @@ function generateLink() {
     const correctIndex = radioChecked ? Number(radioChecked.value) : -1;
 
     if (!qText) { alert(`Заполни текст вопроса №${i + 1}`); return; }
-    if (rawOpts.length < 2 || rawOpts.some((x) => !x)) { alert(`В вопросе №${i + 1} нужно минимум 2 варианта и без пустых строк.`); return; }
+    if (rawOpts.length < 2 || rawOpts.some((x) => !x)) {
+      alert(`В вопросе №${i + 1} нужно минимум 2 варианта и без пустых строк.`);
+      return;
+    }
     if (correctIndex < 0) { alert(`Отметь правильный вариант в вопросе №${i + 1}`); return; }
 
     data.push({ q: qText, o: rawOpts, a: correctIndex, e: expl });
   }
 
-  // v:3 — добавили total time
-  const quizObj = {
-    v: 3,
-    title,
-    m: mode,
-    t: mode === 'timer' ? timeLimit : 0,
-    tt: mode === 'total' ? totalTimeLimit : 0,
-    d: data
-  };
+  const quizObj = { v: 2, title, m: mode, t: timeLimit, d: data };
 
   const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(quizObj));
   const link = `${window.location.origin}${window.location.pathname}#quiz=${encoded}`;
@@ -338,7 +346,7 @@ function generateLink() {
   saveMyQuiz({
     encoded,
     title: title || `Викторина (${data.length} вопр.)`,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
 
   setActiveScreen('link-screen');
@@ -416,10 +424,11 @@ function renderMyQuizzes() {
     return;
   }
 
-  host.innerHTML = arr.map((q) => {
-    const dt = new Date(q.createdAt || Date.now()).toLocaleString();
-    const title = escapeHtml(q.title || 'Викторина');
-    return `
+  host.innerHTML = arr
+    .map((q) => {
+      const dt = new Date(q.createdAt || Date.now()).toLocaleString();
+      const title = escapeHtml(q.title || 'Викторина');
+      return `
       <div class="quiz-item">
         <div class="title">${title}</div>
         <div class="meta">Создано: ${escapeHtml(dt)}</div>
@@ -430,11 +439,12 @@ function renderMyQuizzes() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 }
 
 // -------------------------
-// QUIZ LOADING + INTRO
+// QUIZ LOADING
 // -------------------------
 function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
   let json;
@@ -450,7 +460,7 @@ function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
     return;
   }
 
-  currentQuiz = normalizeQuiz(json);
+  currentQuiz = json;
   quizEncoded = encoded;
 
   if (!allowRepeat) {
@@ -461,85 +471,14 @@ function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
     }
   }
 
-  // показываем превью-экран (а не стартуем сразу)
-  showIntro();
-}
-
-function normalizeQuiz(q) {
-  // поддержка старых ссылок:
-  // v2 speed -> total (если кто-то уже создал по старой логике)
-  // если m === 'speed' и есть t => переедем на total tt=t
-  if (!q || typeof q !== 'object') return q;
-  const out = { ...q };
-
-  if (out.m === 'speed') {
-    out.m = 'total';
-    out.tt = Number(out.t || 0);
-    out.t = 0;
-  }
-  out.t = Number(out.t || 0);
-  out.tt = Number(out.tt || 0);
-  if (!Array.isArray(out.d)) out.d = [];
-  return out;
-}
-
-function modeLabel(m) {
-  if (m === 'classic') return 'Классика';
-  if (m === 'timer') return 'Таймер на каждый вопрос';
-  if (m === 'total') return 'Общее время на всю викторину';
-  return '—';
-}
-
-function showIntro() {
-  setActiveScreen('intro-screen');
-
-  const title = (currentQuiz?.title || '').trim() || 'Викторина';
-  const count = currentQuiz?.d?.length || 0;
-  const m = currentQuiz?.m;
-
-  document.getElementById('intro-title').innerText = title;
-  document.getElementById('intro-count').innerText = `${count} ${pluralRu(count, 'вопрос', 'вопроса', 'вопросов')}`;
-  document.getElementById('intro-mode').innerText = `Режим: ${modeLabel(m)}`;
-
-  const hint = document.getElementById('intro-hint');
-  if (m === 'timer') {
-    hint.innerText = `На каждый вопрос: ${Number(currentQuiz.t || 0)} сек.`;
-  } else if (m === 'total') {
-    hint.innerText = `На всю викторину: ${Number(currentQuiz.tt || 0)} сек.`;
-  } else {
-    hint.innerText = `Без таймера.`;
-  }
-}
-
-function pluralRu(n, one, two, five) {
-  n = Math.abs(Number(n)) % 100;
-  const n1 = n % 10;
-  if (n > 10 && n < 20) return five;
-  if (n1 > 1 && n1 < 5) return two;
-  if (n1 === 1) return one;
-  return five;
-}
-
-function startQuiz() {
   answersLog = [];
   currentQIndex = 0;
   score = 0;
   startTime = Date.now();
 
-  totalTimerStartedAt = 0;
-  totalDurationMs = 0;
-
   setActiveScreen('game-screen');
-  document.getElementById('already-completed').classList.add('hidden');
-
-  // если общий таймер — запускаем один раз на весь квиз
-  if (currentQuiz?.m === 'total') {
-    const sec = Number(currentQuiz.tt || 0);
-    startTotalTimer(sec);
-  } else {
-    // на classic/timer — подпись уберём
-    setTimerCaption('');
-  }
+  const ac = document.getElementById('already-completed');
+  if (ac) ac.classList.add('hidden');
 
   showQuestion();
 }
@@ -548,8 +487,7 @@ function startQuiz() {
 // GAME
 // -------------------------
 function showQuestion() {
-  // per-question timer только в режиме timer
-  stopPerQuestionTimer();
+  stopTimer();
   questionLocked = false;
 
   document.getElementById('post-answer-box').classList.add('hidden');
@@ -572,19 +510,7 @@ function showQuestion() {
     container.appendChild(b);
   });
 
-  // режим "таймер на каждый вопрос"
-  if (currentQuiz.m === 'timer') {
-    startPerQuestionTimer(Number(currentQuiz.t || 0));
-    setTimerCaption('на вопрос');
-  }
-
-  // режим "общее время" — таймер уже идёт, тут просто обновим UI сразу
-  if (currentQuiz.m === 'total') {
-    setTimerCaption('на всю викторину');
-    // важно: не перезапускать интервал — он уже запущен
-    // просто принудительно обновим надпись (если экран сменился/перерисовка)
-    // (интервал делает update сам)
-  }
+  if (currentQuiz.m === 'timer') startTimer(Number(currentQuiz.t || 0));
 }
 
 function onAnswerClick(selectedIndex) {
@@ -599,7 +525,7 @@ function onAnswerClick(selectedIndex) {
   });
 }
 
-function onTimeoutPerQuestion() {
+function onTimeout() {
   if (questionLocked) return;
   const q = currentQuiz.d[currentQIndex];
   resolveQuestion({
@@ -613,9 +539,7 @@ function onTimeoutPerQuestion() {
 
 function resolveQuestion({ selectedIndex, correctIndex, options, explanation, reason }) {
   questionLocked = true;
-
-  // в режиме timer — стопаем таймер вопроса, но НЕ общий таймер
-  stopPerQuestionTimer();
+  stopTimer();
 
   const btns = [...document.querySelectorAll('.option-btn')];
   btns.forEach((b) => (b.disabled = true));
@@ -626,7 +550,7 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
 
   if (isCorrect) score++;
 
-  // подсветка только если пользователь ответил
+  // красивая подсветка
   if (reason === 'answered') {
     btns.forEach((b, idx) => {
       if (idx === correctIndex) b.classList.add('correct');
@@ -680,18 +604,9 @@ function nextQuestion() {
 }
 
 // -------------------------
-// TIMER UI HELPERS
+// TIMER
 // -------------------------
-function setTimerCaption(txt) {
-  const el = document.getElementById('timer-caption');
-  if (!el) return;
-  el.innerText = txt ? `Таймер: ${txt}` : '';
-}
-
-// -------------------------
-// PER-QUESTION TIMER
-// -------------------------
-function startPerQuestionTimer(sec) {
+function startTimer(sec) {
   const disp = document.getElementById('timer-display');
   const digits = document.getElementById('time-left');
   const fill = document.getElementById('timer-bar-fill');
@@ -728,8 +643,8 @@ function startPerQuestionTimer(sec) {
     if (leftSec <= 3) fill.classList.add('blink');
 
     if (leftMs <= 0) {
-      stopPerQuestionTimer();
-      onTimeoutPerQuestion();
+      stopTimer();
+      onTimeout();
     }
   };
 
@@ -737,119 +652,29 @@ function startPerQuestionTimer(sec) {
   timerTickInterval = setInterval(update, 50);
 }
 
-function stopPerQuestionTimer() {
-  if (timerTickInterval) {
-    clearInterval(timerTickInterval);
-    timerTickInterval = null;
-  }
-  // важно: дисплей не прячем тут безусловно, потому что он нужен для total-таймера
-  if (currentQuiz?.m !== 'total') {
-    const disp = document.getElementById('timer-display');
-    if (disp) disp.classList.add('hidden');
-  }
-}
-
-// -------------------------
-// TOTAL QUIZ TIMER
-// -------------------------
-function startTotalTimer(sec) {
-  const disp = document.getElementById('timer-display');
-  const digits = document.getElementById('time-left');
-  const fill = document.getElementById('timer-bar-fill');
-  const top = disp.querySelector('.timer-top');
-
-  if (!sec || sec <= 0) {
-    disp.classList.add('hidden');
-    return;
-  }
-
-  disp.classList.remove('hidden');
-  fill.style.width = '100%';
-  fill.classList.remove('danger', 'blink');
-  top.classList.remove('danger');
-
-  totalTimerStartedAt = Date.now();
-  totalDurationMs = sec * 1000;
-
-  const update = () => {
-    const now = Date.now();
-    const elapsed = now - totalTimerStartedAt;
-    const leftMs = Math.max(0, totalDurationMs - elapsed);
-    const leftSec = Math.ceil(leftMs / 1000);
-
-    digits.innerText = String(leftSec);
-
-    const pct = totalDurationMs > 0 ? Math.max(0, (leftMs / totalDurationMs) * 100) : 0;
-    fill.style.width = `${pct}%`;
-
-    if (pct <= 20 || leftSec <= 3) {
-      fill.classList.add('danger');
-      top.classList.add('danger');
-    }
-    if (leftSec <= 3) fill.classList.add('blink');
-
-    if (leftMs <= 0) {
-      stopTotalTimer();
-      finishGameDueToTotalTimeout();
-    }
-  };
-
-  update();
-  // отдельный интервал для total, чтобы не конфликтовать с per-question
-  // (храним его тоже в timerTickInterval, потому что per-question в total не запускается)
-  timerTickInterval = setInterval(update, 50);
-}
-
-function stopTotalTimer() {
+function stopTimer() {
   const disp = document.getElementById('timer-display');
   if (disp) disp.classList.add('hidden');
-
   if (timerTickInterval) {
     clearInterval(timerTickInterval);
     timerTickInterval = null;
   }
-}
-
-function finishGameDueToTotalTimeout() {
-  // помечаем оставшиеся вопросы как "не успел"
-  if (currentQuiz?.d?.length) {
-    for (let i = currentQIndex; i < currentQuiz.d.length; i++) {
-      const q = currentQuiz.d[i];
-      const correctText = q.o?.[q.a];
-      answersLog.push({
-        index: i,
-        question: q.q,
-        selected: null,
-        correct: correctText,
-        status: 'skip'
-      });
-    }
-  }
-  // чтобы игра не считала что мы на вопросе
-  currentQIndex = currentQuiz?.d?.length || currentQIndex;
-  finishGame(true);
 }
 
 // -------------------------
 // FINISH + SAVED RESULTS
 // -------------------------
-function finishGame(isTimeoutTotal = false) {
-  // стопаем таймеры
-  if (currentQuiz?.m === 'total') stopTotalTimer();
-  else stopPerQuestionTimer();
-
+function finishGame() {
+  stopTimer();
   setActiveScreen('result-screen');
 
   const totalQuestions = currentQuiz?.d?.length || 0;
   document.getElementById('score-val').innerText = String(score);
 
   const sr = document.getElementById('speed-result');
-  // теперь "speed" нет — но покажем время для total (и вообще можно показывать всегда)
-  const totalTimeSec = Number(((Date.now() - startTime) / 1000).toFixed(1));
-  if (currentQuiz?.m === 'total') {
-    sr.innerText = isTimeoutTotal
-      ? `⏰ Время вышло. Прошло: ${totalTimeSec} сек.`
-      : `Время: ${totalTimeSec} сек.`;
+  if (currentQuiz.m === 'speed') {
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    sr.innerText = `Время: ${totalTime} сек.`;
     sr.classList.remove('hidden');
   } else {
     sr.classList.add('hidden');
@@ -863,7 +688,7 @@ function finishGame(isTimeoutTotal = false) {
       score,
       totalQuestions,
       answersLog,
-      timeTakenSec: totalTimeSec,
+      timeTakenSec: Number(((Date.now() - startTime) / 1000).toFixed(1)),
     };
     writeCompleted(quizEncoded, payload);
   }
@@ -881,7 +706,7 @@ function showSavedResult(saved) {
   document.getElementById('score-val').innerText = String(saved.score ?? 0);
 
   const sr = document.getElementById('speed-result');
-  if (saved.mode === 'total' && saved.timeTakenSec != null) {
+  if (saved.mode === 'speed' && saved.timeTakenSec != null) {
     sr.innerText = `Время: ${saved.timeTakenSec} сек.`;
     sr.classList.remove('hidden');
   } else {
@@ -937,7 +762,7 @@ function writeCompleted(id, payload) {
 // UTIL
 // -------------------------
 function escapeHtml(str) {
-  return String(str || '')
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
