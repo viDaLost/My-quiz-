@@ -8,12 +8,10 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
-<body class="show-bg">
 
-  <!-- фон ❓ -->
-  <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
-
+<body>
   <div class="container" id="main-container">
+
     <!-- HOME -->
     <div id="home-screen" class="screen fade-in">
       <div class="brand">
@@ -23,7 +21,6 @@
 
       <button onclick="showCreator()" class="btn primary">Создать викторину</button>
       <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-      
     </div>
 
     <!-- MY QUIZZES -->
@@ -56,13 +53,20 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">Ответь как можно быстрее</option>
+          <option value="total">Общее время на всю викторину</option>
         </select>
       </div>
 
+      <!-- Per-question timer -->
       <div id="timer-setting" class="hidden field">
-        <label>Секунд на ответ:</label>
+        <label>Секунд на ответ (на каждый вопрос):</label>
         <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
+      </div>
+
+      <!-- Total quiz timer -->
+      <div id="total-setting" class="hidden field">
+        <label>Секунд на всю викторину:</label>
+        <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" />
       </div>
 
       <div id="questions-container"></div>
@@ -81,6 +85,25 @@
       <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
+    <!-- INTRO (по ссылке перед стартом игры) -->
+    <div id="intro-screen" class="screen hidden">
+      <h3 class="screen-title">🎮 Викторина</h3>
+
+      <div class="intro-card">
+        <div class="intro-title" id="intro-title">—</div>
+
+        <div class="intro-meta">
+          <div class="intro-pill" id="intro-count">0 вопросов</div>
+          <div class="intro-pill" id="intro-mode">Режим: —</div>
+        </div>
+
+        <div class="intro-hint" id="intro-hint"></div>
+
+        <button class="btn primary" onclick="startQuiz()">Пройти викторину</button>
+        <button class="btn secondary" onclick="goHomeClearHash()">На главную</button>
+      </div>
+    </div>
+
     <!-- GAME -->
     <div id="game-screen" class="screen hidden">
       <div id="timer-display" class="hidden" aria-live="polite">
@@ -93,6 +116,8 @@
         <div class="timer-bar" role="progressbar" aria-label="Осталось времени">
           <div id="timer-bar-fill" class="timer-bar-fill"></div>
         </div>
+
+        <div id="timer-caption" class="timer-caption"></div>
       </div>
 
       <div class="card" id="question-card">
@@ -124,6 +149,7 @@
       <div class="score-circle">
         <span id="score-val">0</span>
       </div>
+
       <p id="speed-result" class="hidden"></p>
 
       <div id="already-completed" class="hidden info-box">
@@ -152,6 +178,7 @@
         В главное меню
       </button>
     </div>
+
   </div>
 
   <script src="script.js"></script>
