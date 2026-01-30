@@ -122,7 +122,7 @@ function addQuestionField() {
     <div style="margin-top: 10px;">
       <div class="field">
         <label>Текст вопроса:</label>
-        <input type="text" class="q-text" placeholder="Например: Столица Франции?"
+        <input type="text" class="q-text" placeholder="Текст"
           oninput="updateMini('${blockId}')" />
       </div>
 
