@@ -18,12 +18,12 @@
     <div id="home-screen" class="screen fade-in">
       <div class="brand">
         <div class="brand-title">Quiz Master</div>
-        <div class="brand-subtitle">Создавай и побеждай!</div>
+        <div class="brand-subtitle">Создавай и делись своей викториной</div>
       </div>
 
       <button onclick="showCreator()" class="btn primary">Создать викторину</button>
       <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-      <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
+      
     </div>
 
     <!-- MY QUIZZES -->
@@ -47,8 +47,8 @@
       </div>
 
       <div class="field">
-        <label>Название (для «Моих викторин»):</label>
-        <input type="text" id="quiz-title" placeholder="Например: Фильмы / Игры" maxlength="60" />
+        <label>Название викторины:</label>
+        <input type="text" id="quiz-title" placeholder="Название" maxlength="60" />
       </div>
 
       <div class="field">
@@ -56,7 +56,7 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">Спидран (на общее время)</option>
+          <option value="speed">Ответь как можно быстрее</option>
         </select>
       </div>
 
