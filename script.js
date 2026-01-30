@@ -238,7 +238,7 @@ function buildQuestionNav() {
   chipsHost.innerHTML = blocks.map((b, idx) => {
     const blockId = b.dataset.blockid;
     const mini = document.getElementById(`qmini-${blockId}`)?.textContent || '';
-    const label = `Q${idx + 1}`;
+    const label = `Вопрос${idx + 1}`;
     const active = idx === activeIndex ? 'active' : '';
     return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">${label}</button>`;
   }).join('');
