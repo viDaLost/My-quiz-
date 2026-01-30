@@ -17,7 +17,7 @@ let timerTickInterval = null;
 let questionLocked = false;
 
 let answersLog = [];
-let allowRepeat = false; // важно: для "моих викторин" = true
+let allowRepeat = false;
 
 // -------------------------
 // BOOT
@@ -42,8 +42,10 @@ function setActiveScreen(id) {
   const ids = ['home-screen', 'myquizzes-screen', 'creator-screen', 'link-screen', 'game-screen', 'result-screen'];
   ids.forEach((x) => document.getElementById(x).classList.toggle('hidden', x !== id));
 
-  // фон ❓ только на главном экране
+  // фон ❓ только на главном
   document.body.classList.toggle('show-bg', id === 'home-screen');
+  // прозрачный контейнер только на главном
+  document.body.classList.toggle('home', id === 'home-screen');
 }
 
 function goHome() {
@@ -57,33 +59,30 @@ function goHomeClearHash() {
 }
 
 // -------------------------
-// BACKGROUND ❓
+// BACKGROUND ❓ FALLING
 // -------------------------
 function initBgQuestions() {
   const host = document.getElementById('bg-questions');
   if (!host) return;
 
   host.innerHTML = '';
-  const count = 18;
 
+  // больше, чаще
+  const count = 55;
   for (let i = 0; i < count; i++) {
     const s = document.createElement('div');
     s.className = 'qmark';
     s.textContent = '❓';
 
-    const size = rand(18, 44);
-    const dur = rand(8, 16);
-    const delay = rand(0, 8);
-    const xJitter = rand(-10, 25);
-    const yJitter = rand(-10, 25);
+    const size = rand(14, 44);
+    const dur = rand(5, 11);          // быстрее
+    const delay = rand(0, 4);         // чаще
+    const left = rand(-10, 110);      // по всей ширине
 
     s.style.fontSize = `${size}px`;
     s.style.animationDuration = `${dur}s`;
     s.style.animationDelay = `${delay}s`;
-
-    // разброс старта из правого нижнего угла
-    s.style.right = `${-12 + xJitter}%`;
-    s.style.bottom = `${-12 + yJitter}%`;
+    s.style.left = `${left}vw`;
 
     host.appendChild(s);
   }
@@ -107,64 +106,90 @@ function showCreator() {
   setActiveScreen('creator-screen');
   const container = document.getElementById('questions-container');
   if (container.children.length === 0) addQuestionField();
+  buildQuestionNav();
 }
 
 function addQuestionField() {
+  // сворачиваем все текущие вопросы (чтобы не превращалось в простыню)
+  document.querySelectorAll('.qdetails').forEach((d) => (d.open = false));
+
   const container = document.getElementById('questions-container');
-  const qIndex = container.children.length;
+  const qIndex = container.querySelectorAll('.qdetails').length;
   const blockId = `qblock-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-  const html = `
-    <div class="question-block" data-qindex="${qIndex}" data-blockid="${blockId}">
-      <div class="qhead">
-        <div class="qtitle">Вопрос ${qIndex + 1}</div>
-        <button type="button" class="btn secondary qremove" onclick="removeQuestion('${blockId}')">Удалить</button>
+  const details = document.createElement('details');
+  details.className = 'qdetails';
+  details.open = true;
+  details.dataset.blockid = blockId;
+  details.dataset.qindex = String(qIndex);
+
+  details.innerHTML = `
+    <summary>
+      <div class="qsum-left">
+        <div class="qsum-title">Вопрос ${qIndex + 1}</div>
+        <div class="qsum-mini" id="qmini-${blockId}">Нажми, чтобы свернуть/развернуть</div>
+      </div>
+      <button type="button" class="btn secondary qremove" onclick="removeQuestion('${blockId}'); event.stopPropagation();">
+        Удалить
+      </button>
+    </summary>
+
+    <div style="margin-top: 10px;">
+      <div class="field">
+        <label>Текст вопроса:</label>
+        <input type="text" class="q-text" placeholder="Например: Столица Франции?" oninput="updateMini('${blockId}')"/>
       </div>
 
-      <input type="text" class="q-text" placeholder="Текст вопроса" />
-
-      <div class="options-wrap" data-options></div>
-
-      <div style="margin-top: 10px;">
-        <button type="button" class="btn secondary" style="padding:12px; font-size:0.95rem; border-radius:14px;"
+      <div class="field" style="margin-top: 6px;">
+        <label>Варианты (отметь правильный слева):</label>
+        <div class="options-wrap" data-options></div>
+        <button type="button" class="btn secondary" style="margin-top:10px; padding:12px; font-size:0.95rem; border-radius:14px;"
           onclick="addOption('${blockId}')">+ Добавить вариант (до 5)</button>
       </div>
 
-      <div class="field" style="margin-top: 12px;">
+      <div class="field" style="margin-top: 10px;">
         <label>Пояснение (покажется только по кнопке в игре):</label>
         <textarea class="q-expl" placeholder="Например: потому что ..."></textarea>
       </div>
     </div>
   `;
 
-  container.insertAdjacentHTML('beforeend', html);
+  container.appendChild(details);
 
+  // 2 варианта по умолчанию
   addOption(blockId);
   addOption(blockId);
 
   renumberQuestions();
+  buildQuestionNav();
+
+  // прокрутить к новому вопросу
+  details.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function removeQuestion(blockId) {
-  const el = document.querySelector(`.question-block[data-blockid="${blockId}"]`);
+  const el = document.querySelector(`.qdetails[data-blockid="${blockId}"]`);
   if (el) el.remove();
   renumberQuestions();
+  buildQuestionNav();
 }
 
 function renumberQuestions() {
-  const blocks = [...document.querySelectorAll('.question-block')];
+  const blocks = [...document.querySelectorAll('.qdetails')];
   blocks.forEach((b, idx) => {
     b.dataset.qindex = String(idx);
-    const t = b.querySelector('.qtitle');
-    if (t) t.textContent = `Вопрос ${idx + 1}`;
 
+    const title = b.querySelector('.qsum-title');
+    if (title) title.textContent = `Вопрос ${idx + 1}`;
+
+    // радио-группа уникальна на вопрос
     const radios = b.querySelectorAll('input[type="radio"]');
     radios.forEach((r) => (r.name = `correct-${idx}`));
   });
 }
 
 function addOption(blockId) {
-  const block = document.querySelector(`.question-block[data-blockid="${blockId}"]`);
+  const block = document.querySelector(`.qdetails[data-blockid="${blockId}"]`);
   if (!block) return;
 
   const qIndex = Number(block.dataset.qindex || 0);
@@ -178,9 +203,57 @@ function addOption(blockId) {
   row.className = 'option-row';
   row.innerHTML = `
     <input type="radio" name="correct-${qIndex}" value="${optIndex}" aria-label="Правильный вариант" />
-    <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}" />
+    <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}" oninput="updateMini('${blockId}')"/>
   `;
   wrap.appendChild(row);
+}
+
+function updateMini(blockId) {
+  const block = document.querySelector(`.qdetails[data-blockid="${blockId}"]`);
+  const mini = document.getElementById(`qmini-${blockId}`);
+  if (!block || !mini) return;
+
+  const qText = (block.querySelector('.q-text')?.value || '').trim();
+  const opts = [...block.querySelectorAll('.opt-text')].map(x => (x.value || '').trim()).filter(Boolean);
+
+  const title = qText ? qText : 'Без текста вопроса';
+  const optInfo = opts.length ? `(${opts.length} вар.)` : '(нет вариантов)';
+
+  mini.textContent = `${title} ${optInfo}`;
+  buildQuestionNav();
+}
+
+function buildQuestionNav() {
+  const chipsHost = document.getElementById('qnav-chips');
+  if (!chipsHost) return;
+
+  const blocks = [...document.querySelectorAll('.qdetails')];
+  if (!blocks.length) {
+    chipsHost.innerHTML = '';
+    return;
+  }
+
+  const activeIndex = blocks.findIndex((b) => b.open) >= 0 ? blocks.findIndex((b) => b.open) : 0;
+
+  chipsHost.innerHTML = blocks.map((b, idx) => {
+    const blockId = b.dataset.blockid;
+    const mini = document.getElementById(`qmini-${blockId}`)?.textContent || '';
+    const label = `Q${idx + 1}`;
+    const active = idx === activeIndex ? 'active' : '';
+    return `<button type="button" class="qchip ${active}" onclick="jumpToQuestion(${idx})" title="${escapeHtml(mini)}">${label}</button>`;
+  }).join('');
+}
+
+function jumpToQuestion(idx) {
+  const blocks = [...document.querySelectorAll('.qdetails')];
+  const target = blocks[idx];
+  if (!target) return;
+
+  blocks.forEach((d) => (d.open = false));
+  target.open = true;
+
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  buildQuestionNav();
 }
 
 function generateLink() {
@@ -188,7 +261,7 @@ function generateLink() {
   const timeLimit = Number(document.getElementById('time-limit').value || 0);
   const title = (document.getElementById('quiz-title').value || '').trim();
 
-  const blocks = [...document.querySelectorAll('.question-block')];
+  const blocks = [...document.querySelectorAll('.qdetails')];
   if (blocks.length === 0) {
     alert('Добавь хотя бы один вопрос.');
     return;
@@ -204,18 +277,9 @@ function generateLink() {
     const radioChecked = b.querySelector(`input[type="radio"][name="correct-${i}"]:checked`);
     const correctIndex = radioChecked ? Number(radioChecked.value) : -1;
 
-    if (!qText) {
-      alert(`Заполни текст вопроса №${i + 1}`);
-      return;
-    }
-    if (rawOpts.length < 2 || rawOpts.some((x) => !x)) {
-      alert(`В вопросе №${i + 1} нужно минимум 2 варианта и без пустых строк.`);
-      return;
-    }
-    if (correctIndex < 0) {
-      alert(`Отметь правильный вариант в вопросе №${i + 1}`);
-      return;
-    }
+    if (!qText) { alert(`Заполни текст вопроса №${i + 1}`); return; }
+    if (rawOpts.length < 2 || rawOpts.some((x) => !x)) { alert(`В вопросе №${i + 1} нужно минимум 2 варианта и без пустых строк.`); return; }
+    if (correctIndex < 0) { alert(`Отметь правильный вариант в вопросе №${i + 1}`); return; }
 
     data.push({ q: qText, o: rawOpts, a: correctIndex, e: expl });
   }
@@ -273,7 +337,6 @@ function saveMyQuiz(item) {
 function deleteMyQuiz(encoded) {
   const arr = loadMyQuizzes().filter((x) => x.encoded !== encoded);
   localStorage.setItem(MY_QUIZZES_KEY, JSON.stringify(arr));
-  // чистим сохранение прохождения (на всякий)
   try { localStorage.removeItem(COMPLETED_PREFIX + encoded); } catch {}
   renderMyQuizzes();
 }
@@ -294,7 +357,6 @@ function copyMyQuizLink(encoded) {
 }
 
 function playMyQuiz(encoded) {
-  // МОИ ВИКТОРИНЫ — можно проходить сколько угодно
   window.location.hash = `quiz=${encoded}`;
   loadQuizFromURL(encoded, { allowRepeat: true });
 }
@@ -304,11 +366,7 @@ function renderMyQuizzes() {
   const arr = loadMyQuizzes();
 
   if (!arr.length) {
-    host.innerHTML = `
-      <div class="info-box">
-        Тут пока пусто. Создай викторину — и она появится здесь.
-      </div>
-    `;
+    host.innerHTML = `<div class="info-box">Тут пока пусто. Создай викторину — и она появится здесь.</div>`;
     return;
   }
 
@@ -349,7 +407,6 @@ function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
   currentQuiz = json;
   quizEncoded = encoded;
 
-  // для чужих викторин — блокируем повтор; для "моих" — нет
   if (!allowRepeat) {
     const saved = readCompleted(quizEncoded);
     if (saved) {
@@ -402,7 +459,6 @@ function showQuestion() {
 function onAnswerClick(selectedIndex) {
   if (questionLocked) return;
   const q = currentQuiz.d[currentQIndex];
-
   resolveQuestion({
     selectedIndex,
     correctIndex: q.a,
@@ -415,7 +471,6 @@ function onAnswerClick(selectedIndex) {
 function onTimeout() {
   if (questionLocked) return;
   const q = currentQuiz.d[currentQIndex];
-
   resolveQuestion({
     selectedIndex: null,
     correctIndex: q.a,
@@ -438,22 +493,16 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
 
   if (isCorrect) score++;
 
-  // Подсветка только если пользователь отвечал вручную
+  // подсветка только если пользователь ответил
   if (reason === 'answered') {
     btns.forEach((b, idx) => {
       if (idx === correctIndex) b.classList.add('correct');
       if (selectedIndex !== null && idx === selectedIndex && selectedIndex !== correctIndex) b.classList.add('wrong');
     });
 
-    if (isCorrect) {
-      confetti({ particleCount: 40, spread: 50 });
-    } else {
-      document.getElementById('main-container').classList.add('shake');
-      setTimeout(() => document.getElementById('main-container').classList.remove('shake'), 400);
-    }
+    if (isCorrect) confetti({ particleCount: 40, spread: 50 });
   }
 
-  // лог
   answersLog.push({
     index: currentQIndex,
     question: currentQuiz.d[currentQIndex].q,
@@ -462,8 +511,6 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
     status: reason === 'timeout' ? 'skip' : isCorrect ? 'ok' : 'bad',
   });
 
-  // Пост-блок:
-  // таймаут -> без автопоказа правильного и без подсветок, просто "Далее"
   const summaryEl = document.getElementById('post-summary');
   if (reason === 'timeout') {
     summaryEl.innerText = `⏰ Время вышло.`;
@@ -475,8 +522,6 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
 
   const btnShow = document.getElementById('btn-show-expl');
   const expText = (explanation || '').trim();
-
-  // Пояснение показываем только по кнопке (и только если не таймаут)
   if (reason !== 'timeout' && expText.length > 0) {
     btnShow.classList.remove('hidden');
     document.getElementById('explanation-text').innerText = expText;
@@ -536,7 +581,7 @@ function startTimer(sec) {
 
     if (pct <= 20 || leftSec <= 3) {
       fill.classList.add('danger');
-      top.classList.add('danger'); // цифры краснеют
+      top.classList.add('danger');
     }
     if (leftSec <= 3) fill.classList.add('blink');
 
@@ -553,7 +598,6 @@ function startTimer(sec) {
 function stopTimer() {
   const disp = document.getElementById('timer-display');
   if (disp) disp.classList.add('hidden');
-
   if (timerTickInterval) {
     clearInterval(timerTickInterval);
     timerTickInterval = null;
@@ -579,7 +623,6 @@ function finishGame() {
     sr.classList.add('hidden');
   }
 
-  // сохраняем прохождение ТОЛЬКО если не allowRepeat
   if (!allowRepeat) {
     const payload = {
       quizEncoded,
