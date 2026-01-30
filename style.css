@@ -36,18 +36,15 @@ body {
   flex-direction: column;
 }
 
-/* Центрирование экранов (главное меню и основные состояния) */
-#home-screen,
-#creator-screen,
-#link-screen,
-#game-screen,
-#result-screen {
+/* ЕДИНЫЙ КЛАСС ЭКРАНОВ (чисто и без конфликтов с .hidden) */
+.screen {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+/* Заголовок остаётся сверху контейнера */
 header h1 {
   text-align: center;
   color: var(--primary);
