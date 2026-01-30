@@ -1,7 +1,7 @@
 // -------------------------
-// CONFIG / STORAGE KEYS
+// STORAGE KEYS
 // -------------------------
-const COMPLETED_PREFIX = 'quiz_master_completed:';  // блок повторного прохождения
+const COMPLETED_PREFIX = 'quiz_master_completed:';  // блок повтора для чужих викторин
 const MY_QUIZZES_KEY = 'quiz_master_my_quizzes';    // "мои викторины"
 
 // -------------------------
@@ -17,6 +17,7 @@ let timerTickInterval = null;
 let questionLocked = false;
 
 let answersLog = [];
+let allowRepeat = false; // важно: для "моих викторин" = true
 
 // -------------------------
 // BOOT
@@ -28,7 +29,7 @@ window.onload = () => {
   const hash = window.location.hash;
   if (hash.includes('quiz=')) {
     const encoded = hash.split('quiz=')[1];
-    loadQuizFromURL(encoded);
+    loadQuizFromURL(encoded, { allowRepeat: false });
   } else {
     setActiveScreen('home-screen');
   }
@@ -56,7 +57,7 @@ function goHomeClearHash() {
 }
 
 // -------------------------
-// BACKGROUND ❓ ANIMATION
+// BACKGROUND ❓
 // -------------------------
 function initBgQuestions() {
   const host = document.getElementById('bg-questions');
@@ -71,18 +72,18 @@ function initBgQuestions() {
     s.textContent = '❓';
 
     const size = rand(18, 44);
-    const dur = rand(7, 14);        // seconds
-    const delay = rand(0, 7);       // seconds
-    const xJitter = rand(-10, 25);  // %
-    const yJitter = rand(-10, 25);  // %
+    const dur = rand(8, 16);
+    const delay = rand(0, 8);
+    const xJitter = rand(-10, 25);
+    const yJitter = rand(-10, 25);
 
     s.style.fontSize = `${size}px`;
     s.style.animationDuration = `${dur}s`;
     s.style.animationDelay = `${delay}s`;
 
-    // небольшой разброс старта
-    s.style.right = `${-10 + xJitter}%`;
-    s.style.bottom = `${-10 + yJitter}%`;
+    // разброс старта из правого нижнего угла
+    s.style.right = `${-12 + xJitter}%`;
+    s.style.bottom = `${-12 + yJitter}%`;
 
     host.appendChild(s);
   }
@@ -104,8 +105,6 @@ function wireModeSelect() {
 
 function showCreator() {
   setActiveScreen('creator-screen');
-
-  // если вопросов ещё нет — добавим 1
   const container = document.getElementById('questions-container');
   if (container.children.length === 0) addQuestionField();
 }
@@ -126,13 +125,13 @@ function addQuestionField() {
 
       <div class="options-wrap" data-options></div>
 
-      <div class="opt-actions">
-        <button type="button" class="btn secondary small-btn" onclick="addOption('${blockId}')">+ Добавить вариант (до 5)</button>
-        <div class="opt-hint">Отметь правильный вариант галочкой слева.</div>
+      <div style="margin-top: 10px;">
+        <button type="button" class="btn secondary" style="padding:12px; font-size:0.95rem; border-radius:14px;"
+          onclick="addOption('${blockId}')">+ Добавить вариант (до 5)</button>
       </div>
 
       <div class="field" style="margin-top: 12px;">
-        <label>Пояснение (показывается только по кнопке в игре):</label>
+        <label>Пояснение (покажется только по кнопке в игре):</label>
         <textarea class="q-expl" placeholder="Например: потому что ..."></textarea>
       </div>
     </div>
@@ -140,11 +139,9 @@ function addQuestionField() {
 
   container.insertAdjacentHTML('beforeend', html);
 
-  // По умолчанию 2 варианта
   addOption(blockId);
   addOption(blockId);
 
-  // Переподписываем индексы в заголовках
   renumberQuestions();
 }
 
@@ -161,7 +158,6 @@ function renumberQuestions() {
     const t = b.querySelector('.qtitle');
     if (t) t.textContent = `Вопрос ${idx + 1}`;
 
-    // радио-группа должна быть уникальной на вопрос
     const radios = b.querySelectorAll('input[type="radio"]');
     radios.forEach((r) => (r.name = `correct-${idx}`));
   });
@@ -184,7 +180,6 @@ function addOption(blockId) {
     <input type="radio" name="correct-${qIndex}" value="${optIndex}" aria-label="Правильный вариант" />
     <input type="text" class="opt-text" placeholder="Вариант ответа ${optIndex + 1}" />
   `;
-
   wrap.appendChild(row);
 }
 
@@ -205,11 +200,7 @@ function generateLink() {
     const qText = (b.querySelector('.q-text').value || '').trim();
     const expl = (b.querySelector('.q-expl').value || '').trim();
 
-    const opts = [...b.querySelectorAll('.opt-text')]
-      .map((x) => (x.value || '').trim())
-      .filter((x) => x.length > 0);
-
-    // правильный индекс
+    const rawOpts = [...b.querySelectorAll('.opt-text')].map((x) => (x.value || '').trim());
     const radioChecked = b.querySelector(`input[type="radio"][name="correct-${i}"]:checked`);
     const correctIndex = radioChecked ? Number(radioChecked.value) : -1;
 
@@ -217,43 +208,23 @@ function generateLink() {
       alert(`Заполни текст вопроса №${i + 1}`);
       return;
     }
-    if (opts.length < 2) {
-      alert(`В вопросе №${i + 1} нужно минимум 2 варианта ответа.`);
+    if (rawOpts.length < 2 || rawOpts.some((x) => !x)) {
+      alert(`В вопросе №${i + 1} нужно минимум 2 варианта и без пустых строк.`);
       return;
     }
-    // радио значение относится к строкам; но мы фильтровали пустые — чтобы не путаться, требуем заполнить все строки до отмеченной
     if (correctIndex < 0) {
       alert(`Отметь правильный вариант в вопросе №${i + 1}`);
       return;
     }
-    if (correctIndex >= (b.querySelectorAll('.opt-text').length)) {
-      alert(`Проблема с вариантами в вопросе №${i + 1}`);
-      return;
-    }
 
-    // Чтобы совпадало с тем, что реально введено:
-    // берём варианты без фильтра по порядку, но пустые запрещаем (иначе индексы поплывут)
-    const rawOpts = [...b.querySelectorAll('.opt-text')].map((x) => (x.value || '').trim());
-    if (rawOpts.some((x) => !x)) {
-      alert(`В вопросе №${i + 1} заполни все добавленные варианты (без пустых строк).`);
-      return;
-    }
-
-    data.push({
-      q: qText,
-      o: rawOpts,          // options
-      a: correctIndex,     // answer index
-      e: expl              // explanation
-    });
+    data.push({ q: qText, o: rawOpts, a: correctIndex, e: expl });
   }
 
   const quizObj = { v: 2, title, m: mode, t: timeLimit, d: data };
 
-  // LZString (короче чем base64)
   const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(quizObj));
   const link = `${window.location.origin}${window.location.pathname}#quiz=${encoded}`;
 
-  // Сохраняем в "Мои викторины"
   saveMyQuiz({
     encoded,
     title: title || `Викторина (${data.length} вопр.)`,
@@ -268,7 +239,6 @@ function copyLink() {
   const el = document.getElementById('share-link');
   el.select();
   el.setSelectionRange(0, el.value.length);
-
   const ok = document.execCommand('copy');
   if (ok) confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
 }
@@ -293,7 +263,6 @@ function loadMyQuizzes() {
 
 function saveMyQuiz(item) {
   const arr = loadMyQuizzes();
-  // не дублируем по encoded
   const exists = arr.some((x) => x.encoded === item.encoded);
   if (!exists) {
     arr.unshift(item);
@@ -304,8 +273,7 @@ function saveMyQuiz(item) {
 function deleteMyQuiz(encoded) {
   const arr = loadMyQuizzes().filter((x) => x.encoded !== encoded);
   localStorage.setItem(MY_QUIZZES_KEY, JSON.stringify(arr));
-
-  // также удалим сохранённый результат прохождения этой викторины (чтобы не мусорить)
+  // чистим сохранение прохождения (на всякий)
   try { localStorage.removeItem(COMPLETED_PREFIX + encoded); } catch {}
   renderMyQuizzes();
 }
@@ -326,8 +294,9 @@ function copyMyQuizLink(encoded) {
 }
 
 function playMyQuiz(encoded) {
+  // МОИ ВИКТОРИНЫ — можно проходить сколько угодно
   window.location.hash = `quiz=${encoded}`;
-  loadQuizFromURL(encoded);
+  loadQuizFromURL(encoded, { allowRepeat: true });
 }
 
 function renderMyQuizzes() {
@@ -361,15 +330,17 @@ function renderMyQuizzes() {
 }
 
 // -------------------------
-// QUIZ LOADING (LZString)
+// QUIZ LOADING
 // -------------------------
-function loadQuizFromURL(encoded) {
+function loadQuizFromURL(encoded, opts = { allowRepeat: false }) {
   let json;
+  allowRepeat = !!opts.allowRepeat;
+
   try {
     const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
     if (!decompressed) throw new Error('decompress failed');
     json = JSON.parse(decompressed);
-  } catch (e) {
+  } catch {
     alert('Ошибка ссылки/данных викторины.');
     goHomeClearHash();
     return;
@@ -378,14 +349,15 @@ function loadQuizFromURL(encoded) {
   currentQuiz = json;
   quizEncoded = encoded;
 
-  // Если уже проходили — показываем сохранённые результаты и блокируем повтор
-  const saved = readCompleted(quizEncoded);
-  if (saved) {
-    showSavedResult(saved);
-    return;
+  // для чужих викторин — блокируем повтор; для "моих" — нет
+  if (!allowRepeat) {
+    const saved = readCompleted(quizEncoded);
+    if (saved) {
+      showSavedResult(saved);
+      return;
+    }
   }
 
-  // старт игры
   answersLog = [];
   currentQIndex = 0;
   score = 0;
@@ -430,6 +402,7 @@ function showQuestion() {
 function onAnswerClick(selectedIndex) {
   if (questionLocked) return;
   const q = currentQuiz.d[currentQIndex];
+
   resolveQuestion({
     selectedIndex,
     correctIndex: q.a,
@@ -442,6 +415,7 @@ function onAnswerClick(selectedIndex) {
 function onTimeout() {
   if (questionLocked) return;
   const q = currentQuiz.d[currentQIndex];
+
   resolveQuestion({
     selectedIndex: null,
     correctIndex: q.a,
@@ -462,10 +436,9 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
   const selectedText = selectedIndex === null ? null : options[selectedIndex];
   const isCorrect = selectedIndex !== null && selectedIndex === correctIndex;
 
-  // Счёт: таймаут не засчитываем, неверный — просто не добавляет очко
   if (isCorrect) score++;
 
-  // подсветка
+  // Подсветка только если пользователь отвечал вручную
   if (reason === 'answered') {
     btns.forEach((b, idx) => {
       if (idx === correctIndex) b.classList.add('correct');
@@ -478,38 +451,35 @@ function resolveQuestion({ selectedIndex, correctIndex, options, explanation, re
       document.getElementById('main-container').classList.add('shake');
       setTimeout(() => document.getElementById('main-container').classList.remove('shake'), 400);
     }
-  } else {
-    // timeout: показываем правильный, но не красим "wrong"
-    btns.forEach((b, idx) => {
-      if (idx === correctIndex) b.classList.add('correct');
-    });
   }
 
   // лог
   answersLog.push({
     index: currentQIndex,
     question: currentQuiz.d[currentQIndex].q,
-    selected: selectedText, // string or null
+    selected: selectedText,
     correct: correctText,
     status: reason === 'timeout' ? 'skip' : isCorrect ? 'ok' : 'bad',
   });
 
-  // Пост-блок (без авто-пояснения)
+  // Пост-блок:
+  // таймаут -> без автопоказа правильного и без подсветок, просто "Далее"
   const summaryEl = document.getElementById('post-summary');
   if (reason === 'timeout') {
-    summaryEl.innerText = `⏰ Время вышло. Вопрос не засчитан. Правильный ответ: ${correctText}`;
+    summaryEl.innerText = `⏰ Время вышло.`;
   } else if (isCorrect) {
     summaryEl.innerText = `✅ Верно!`;
   } else {
     summaryEl.innerText = `❌ Неверно. Правильный ответ: ${correctText}`;
   }
 
-  // Кнопка "Показать пояснение" только если есть текст пояснения
   const btnShow = document.getElementById('btn-show-expl');
-  if ((explanation || '').trim().length > 0) {
+  const expText = (explanation || '').trim();
+
+  // Пояснение показываем только по кнопке (и только если не таймаут)
+  if (reason !== 'timeout' && expText.length > 0) {
     btnShow.classList.remove('hidden');
-    // подготовим текст, но не показываем
-    document.getElementById('explanation-text').innerText = explanation;
+    document.getElementById('explanation-text').innerText = expText;
   } else {
     btnShow.classList.add('hidden');
   }
@@ -532,12 +502,13 @@ function nextQuestion() {
 }
 
 // -------------------------
-// TIMER (bar + digits)
+// TIMER
 // -------------------------
 function startTimer(sec) {
   const disp = document.getElementById('timer-display');
-  const span = document.getElementById('time-left');
+  const digits = document.getElementById('time-left');
   const fill = document.getElementById('timer-bar-fill');
+  const top = disp.querySelector('.timer-top');
 
   if (!sec || sec <= 0) {
     disp.classList.add('hidden');
@@ -547,6 +518,7 @@ function startTimer(sec) {
   disp.classList.remove('hidden');
   fill.style.width = '100%';
   fill.classList.remove('danger', 'blink');
+  top.classList.remove('danger');
 
   const startedAt = Date.now();
   const durationMs = sec * 1000;
@@ -557,12 +529,15 @@ function startTimer(sec) {
     const leftMs = Math.max(0, durationMs - elapsed);
     const leftSec = Math.ceil(leftMs / 1000);
 
-    span.innerText = String(leftSec);
+    digits.innerText = String(leftSec);
 
     const pct = Math.max(0, (leftMs / durationMs) * 100);
     fill.style.width = `${pct}%`;
 
-    if (pct <= 20 || leftSec <= 3) fill.classList.add('danger');
+    if (pct <= 20 || leftSec <= 3) {
+      fill.classList.add('danger');
+      top.classList.add('danger'); // цифры краснеют
+    }
     if (leftSec <= 3) fill.classList.add('blink');
 
     if (leftMs <= 0) {
@@ -604,17 +579,19 @@ function finishGame() {
     sr.classList.add('hidden');
   }
 
-  // сохраняем прохождение (блок повторного прохождения)
-  const payload = {
-    quizEncoded,
-    mode: currentQuiz.m,
-    finishedAt: Date.now(),
-    score,
-    totalQuestions,
-    answersLog,
-    timeTakenSec: Number(((Date.now() - startTime) / 1000).toFixed(1)),
-  };
-  writeCompleted(quizEncoded, payload);
+  // сохраняем прохождение ТОЛЬКО если не allowRepeat
+  if (!allowRepeat) {
+    const payload = {
+      quizEncoded,
+      mode: currentQuiz.m,
+      finishedAt: Date.now(),
+      score,
+      totalQuestions,
+      answersLog,
+      timeTakenSec: Number(((Date.now() - startTime) / 1000).toFixed(1)),
+    };
+    writeCompleted(quizEncoded, payload);
+  }
 
   renderAnswerReview(answersLog);
   document.getElementById('answer-review').classList.remove('hidden');
@@ -624,7 +601,6 @@ function finishGame() {
 
 function showSavedResult(saved) {
   setActiveScreen('result-screen');
-
   document.getElementById('already-completed').classList.remove('hidden');
 
   document.getElementById('score-val').innerText = String(saved.score ?? 0);
@@ -679,9 +655,7 @@ function readCompleted(id) {
 function writeCompleted(id, payload) {
   try {
     localStorage.setItem(COMPLETED_PREFIX + id, JSON.stringify(payload));
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 // -------------------------
