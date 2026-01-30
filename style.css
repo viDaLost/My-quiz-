@@ -1,53 +1,97 @@
+/* =========================
+   Quiz Master — Premium UI
+   Calm, premium, non-fatiguing
+   ========================= */
+
 :root{
-  --bg1:#2b0a6a;
-  --bg2:#4f46e5;
-  --bg3:#a855f7;
+  /* Palette */
+  --bg0:#070717;
+  --bg1:#0b0a22;
+  --bg2:#151244;
+  --violet:#7c5cff;      /* accent */
+  --violet2:#a78bfa;     /* soft accent */
+  --cyan:#22d3ee;        /* small highlight (very subtle) */
 
-  --card: rgba(255,255,255,.10);
-  --card2: rgba(255,255,255,.14);
-  --stroke: rgba(255,255,255,.14);
+  /* Surfaces */
+  --glass: rgba(255,255,255,.06);
+  --glass2: rgba(255,255,255,.08);
+  --stroke: rgba(255,255,255,.10);
+  --stroke2: rgba(255,255,255,.14);
 
+  /* Text */
   --text: rgba(255,255,255,.92);
   --muted: rgba(255,255,255,.70);
+  --subtle: rgba(255,255,255,.56);
 
-  --shadow: 0 14px 40px rgba(0,0,0,.28);
-  --radius: 18px;
-  --radius2: 22px;
+  /* Shadows */
+  --shadow: 0 24px 70px rgba(0,0,0,.55);
+  --shadow2: 0 10px 30px rgba(0,0,0,.35);
+  --ring: 0 0 0 4px rgba(124,92,255,.16);
+
+  /* Radius */
+  --r12: 12px;
+  --r14: 14px;
+  --r16: 16px;
+  --r18: 18px;
+  --r20: 20px;
+
+  /* Sizes */
+  --tap: 52px;
 }
 
-/* -------- Base -------- */
+/* ---------- Base ---------- */
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
+
 body{
   margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
-  color:var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text","Segoe UI", Roboto, Inter, Arial, sans-serif;
+  color: var(--text);
 
-  /* ✅ вместо падающих ❓ — фиолетовый градиент */
+  /* Premium deep gradient (not loud) */
   background:
-    radial-gradient(1200px 800px at 20% 10%, rgba(168,85,247,.35), transparent 60%),
-    radial-gradient(1000px 700px at 80% 20%, rgba(79,70,229,.45), transparent 55%),
-    linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    radial-gradient(1200px 900px at 18% 8%, rgba(124,92,255,.22), transparent 60%),
+    radial-gradient(900px 700px at 85% 18%, rgba(167,139,250,.12), transparent 55%),
+    radial-gradient(900px 700px at 50% 110%, rgba(34,211,238,.06), transparent 60%),
+    linear-gradient(160deg, var(--bg0), var(--bg1) 40%, var(--bg2));
   background-attachment: fixed;
 
-  /* "как приложение" */
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
+/* Prevent iOS zoom on focus (keep >=16px) */
+input, select, textarea{ font-size: 16px; }
+
 .container{
-  width:min(560px, 94vw);
+  width: min(580px, 94vw);
   margin: 0 auto;
   padding: 18px 0 22px;
 }
 
 .screen{
   padding: 18px;
-  border-radius: var(--radius2);
-  background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.08));
+  border-radius: var(--r20);
+
+  background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045));
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px);
+
+  position: relative;
+  overflow: hidden;
+}
+
+.screen::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(700px 260px at 15% 0%, rgba(124,92,255,.15), transparent 60%),
+    radial-gradient(700px 260px at 85% 0%, rgba(167,139,250,.10), transparent 60%);
+  pointer-events:none;
+  opacity:.55;
 }
 
 .hidden{ display:none !important; }
@@ -58,18 +102,54 @@ body{
   to{ transform: translateY(0); opacity:1; }
 }
 
-/* -------- Typography / Titles -------- */
-.brand{ text-align:center; margin-top: 6px; margin-bottom: 18px; }
-.brand-title{ font-size: 34px; font-weight: 900; letter-spacing:.2px; }
-.brand-subtitle{ margin-top:6px; color: var(--muted); font-size: 14px; }
+/* ---------- Typography ---------- */
+.brand{
+  text-align:center;
+  margin-top: 6px;
+  margin-bottom: 18px;
+}
+.brand-title{
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  line-height: 1.05;
+}
+.brand-subtitle{
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
 
 .screen-title{
   margin: 0 0 12px 0;
   font-size: 18px;
   letter-spacing: .2px;
+  font-weight: 900;
 }
 
-/* -------- Inputs -------- */
+/* ---------- Common blocks ---------- */
+.hr{
+  height:1px;
+  background: rgba(255,255,255,.10);
+  margin: 16px 0;
+  border-radius: 999px;
+}
+
+.card,
+.intro-card,
+.quiz-item,
+.review-block,
+.info-box,
+#post-answer-box,
+#timer-display{
+  border-radius: var(--r18);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: var(--shadow2);
+}
+
+/* ---------- Fields ---------- */
 .field{ margin-top: 12px; }
 
 label{
@@ -77,70 +157,142 @@ label{
   font-size: 13px;
   color: var(--muted);
   margin-bottom: 8px;
+  font-weight: 800;
+  letter-spacing: .2px;
 }
 
 input, select, textarea{
   width:100%;
   color: var(--text);
-  background: rgba(0,0,0,.18);
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 14px;
-  padding: 12px 12px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--r16);
+  padding: 14px 14px;
+
   outline:none;
-  font-size: 15px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
-textarea{ min-height: 92px; resize: vertical; }
+textarea{ min-height: 96px; resize: vertical; }
 
 textarea[readonly]{
-  min-height: 88px;
+  min-height: 92px;
   font-size: 13px;
+  color: var(--muted);
 }
 
-/* -------- Buttons -------- */
+/* Focus ring */
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(124,92,255,.42);
+  box-shadow: var(--ring), inset 0 1px 0 rgba(255,255,255,.06);
+  background: rgba(255,255,255,.075);
+}
+
+/* ---------- Buttons ---------- */
 .btn{
   width:100%;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 16px;
+  min-height: var(--tap);
+
+  border-radius: var(--r18);
   padding: 14px 14px;
-  font-weight: 800;
-  font-size: 15px;
+
+  font-weight: 900;
+  letter-spacing: .2px;
   cursor:pointer;
-  margin-top: 12px;
-  transition: transform .06s ease, filter .12s ease, opacity .12s ease;
   user-select:none;
+
+  border: 1px solid rgba(255,255,255,.12);
+  transition: transform .06s ease, filter .12s ease, opacity .12s ease, box-shadow .12s ease, border-color .12s ease;
+  margin-top: 12px;
+
+  box-shadow: 0 10px 26px rgba(0,0,0,.35);
 }
 
 .btn:active{ transform: scale(.99); }
 
 .btn.primary{
-  background: linear-gradient(135deg, rgba(79,70,229,.95), rgba(168,85,247,.92));
-  border-color: rgba(255,255,255,.18);
+  background:
+    radial-gradient(100% 160% at 50% 0%, rgba(255,255,255,.18), transparent 55%),
+    linear-gradient(135deg, rgba(124,92,255,.95), rgba(167,139,250,.88));
+  border-color: rgba(255,255,255,.16);
 }
 
+.btn.primary:hover{ filter: brightness(1.04); }
+
 .btn.secondary{
-  background: rgba(0,0,0,.18);
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 10px 22px rgba(0,0,0,.28);
+}
+
+.btn.secondary:hover{
+  border-color: rgba(124,92,255,.22);
+  box-shadow: 0 14px 30px rgba(0,0,0,.32);
 }
 
 .btn:disabled{
-  opacity:.65;
+  opacity:.58;
   cursor:not-allowed;
+  filter: saturate(.85);
 }
 
-/* -------- Creator: Question Nav -------- */
+/* Option buttons in game */
+.option-btn{
+  margin-top:0;
+  text-align:left;
+  font-weight: 900;
+
+  padding: 14px 14px;
+  border-radius: var(--r18);
+
+  background:
+    radial-gradient(100% 140% at 50% 0%, rgba(255,255,255,.10), transparent 65%),
+    rgba(255,255,255,.05);
+
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 22px rgba(0,0,0,.28);
+}
+
+.option-btn.correct{
+  background:
+    radial-gradient(100% 160% at 50% 0%, rgba(255,255,255,.12), transparent 60%),
+    rgba(34,197,94,.14);
+  border-color: rgba(34,197,94,.35);
+}
+
+.option-btn.wrong{
+  background:
+    radial-gradient(100% 160% at 50% 0%, rgba(255,255,255,.12), transparent 60%),
+    rgba(239,68,68,.14);
+  border-color: rgba(239,68,68,.35);
+}
+
+/* ---------- Creator: Question Nav ---------- */
 .qnav{
   display:flex;
   gap: 12px;
   align-items:flex-start;
   justify-content:space-between;
+
   padding: 10px 10px;
-  border-radius: 16px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--r18);
+
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 12px 26px rgba(0,0,0,.28);
 }
 
 .qnav-left{ flex:1; min-width:0; }
-.qnav-title{ font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+
+.qnav-title{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 900;
+  letter-spacing: .2px;
+}
 
 .qnav-chips{
   display:flex;
@@ -149,18 +301,21 @@ textarea[readonly]{
 }
 
 .qchip{
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.14);
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
   color: var(--text);
+
   padding: 8px 10px;
   border-radius: 999px;
-  font-weight: 800;
+
+  font-weight: 900;
   font-size: 12px;
+  letter-spacing: .2px;
 }
 
 .qchip.active{
-  background: rgba(168,85,247,.28);
-  border-color: rgba(168,85,247,.45);
+  background: rgba(124,92,255,.18);
+  border-color: rgba(124,92,255,.32);
 }
 
 .qnav-add{
@@ -172,18 +327,20 @@ textarea[readonly]{
   white-space: nowrap;
 }
 
-/* -------- Question Details Blocks -------- */
+/* ---------- Question blocks (details) ---------- */
 .qdetails{
   margin-top: 12px;
-  border-radius: 16px;
-  background: rgba(0,0,0,.14);
-  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--r18);
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.10);
   overflow:hidden;
+  box-shadow: 0 12px 26px rgba(0,0,0,.26);
 }
 
 .qdetails summary{
   list-style:none;
   cursor:pointer;
+
   padding: 12px 12px;
   display:flex;
   gap: 10px;
@@ -194,18 +351,19 @@ textarea[readonly]{
 .qdetails summary::-webkit-details-marker{ display:none; }
 
 .qsum-left{ min-width:0; }
-.qsum-title{ font-weight: 900; }
+.qsum-title{ font-weight: 950; letter-spacing:.2px; }
 
 .qsum-mini{
   margin-top: 4px;
-  color: var(--muted);
+  color: var(--subtle);
   font-size: 12px;
   white-space: nowrap;
   overflow:hidden;
   text-overflow: ellipsis;
-  max-width: 42vw;
+  max-width: 44vw;
 }
 
+/* remove question button */
 .qremove{
   width:auto;
   margin-top:0;
@@ -214,7 +372,7 @@ textarea[readonly]{
   font-size: 13px;
 }
 
-/* -------- Options in Creator -------- */
+/* ---------- Options in creator ---------- */
 .options-wrap{
   display:flex;
   flex-direction:column;
@@ -223,7 +381,7 @@ textarea[readonly]{
 
 .option-row{
   display:grid;
-  grid-template-columns: 18px 1fr 40px; /* ✅ добавили кнопку удаления */
+  grid-template-columns: 18px 1fr 42px;
   gap: 10px;
   align-items:center;
 }
@@ -232,31 +390,37 @@ textarea[readonly]{
   width:18px;
   height:18px;
   margin:0;
+  accent-color: var(--violet2);
 }
 
 .opt-text{ width:100%; }
 
 .opt-del{
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.14);
+  border: 1px solid rgba(255,255,255,.10);
+
+  background:
+    radial-gradient(100% 160% at 50% 0%, rgba(255,255,255,.10), transparent 60%),
+    rgba(255,255,255,.05);
+
   color: rgba(255,255,255,.90);
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 950;
   cursor:pointer;
+
+  box-shadow: 0 10px 22px rgba(0,0,0,.25);
 }
 
 .opt-del:active{ transform: scale(.98); }
 
-/* -------- Intro Screen -------- */
+/* ---------- Intro ---------- */
 .intro-card{
   margin-top: 8px;
   padding: 14px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--r18);
 }
 
 .intro-title{
@@ -275,32 +439,32 @@ textarea[readonly]{
 .intro-pill{
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
-  font-weight: 800;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  font-weight: 900;
   font-size: 12px;
+  color: rgba(255,255,255,.88);
 }
 
 .intro-hint{
   margin-top: 12px;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.35;
 }
 
-/* -------- Game Card -------- */
+/* ---------- Game ---------- */
 .card{
   margin-top: 8px;
   padding: 14px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
 }
 
 #question-text{
   margin:0;
   font-size: 16px;
-  line-height: 1.35;
-  font-weight: 800;
+  line-height: 1.38;
+  font-weight: 900;
+  letter-spacing: .1px;
 }
 
 #options-container{
@@ -310,33 +474,11 @@ textarea[readonly]{
   margin-top: 12px;
 }
 
-.option-btn{
-  margin-top:0;
-  text-align:left;
-  font-weight: 900;
-  padding: 14px 14px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.18);
-}
-
-.option-btn.correct{
-  background: rgba(34,197,94,.20);
-  border-color: rgba(34,197,94,.45);
-}
-
-.option-btn.wrong{
-  background: rgba(239,68,68,.20);
-  border-color: rgba(239,68,68,.45);
-}
-
-/* -------- Timer -------- */
+/* ---------- Timer ---------- */
 #timer-display{
   margin-top: 2px;
   margin-bottom: 10px;
   padding: 12px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
 }
 
 .timer-top{
@@ -346,28 +488,29 @@ textarea[readonly]{
   font-weight: 950;
 }
 
-.timer-icon{ font-size: 18px; }
-.timer-digits{ font-size: 22px; }
+.timer-icon{ font-size: 18px; opacity:.95; }
+.timer-digits{ font-size: 22px; letter-spacing:.3px; }
 .timer-sec{ color: var(--muted); font-size: 12px; font-weight: 900; }
-
-.timer-top.danger .timer-digits{ filter: brightness(1.1); }
 
 .timer-bar{
   margin-top: 10px;
   height: 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.10);
   overflow:hidden;
 }
 
 .timer-bar-fill{
   height:100%;
   width: 100%;
-  background: rgba(168,85,247,.80);
+  background:
+    linear-gradient(90deg, rgba(124,92,255,.85), rgba(167,139,250,.80));
   transition: width .05s linear;
 }
 
-.timer-bar-fill.danger{ background: rgba(239,68,68,.75); }
+.timer-bar-fill.danger{
+  background: linear-gradient(90deg, rgba(239,68,68,.78), rgba(250,204,21,.55));
+}
 
 .timer-bar-fill.blink{
   animation: blink .55s ease-in-out infinite;
@@ -375,41 +518,41 @@ textarea[readonly]{
 
 @keyframes blink{
   0%,100%{ filter: brightness(1); }
-  50%{ filter: brightness(1.35); }
+  50%{ filter: brightness(1.25); }
 }
 
 .timer-caption{
   margin-top: 8px;
   font-size: 12px;
-  color: var(--muted);
-  font-weight: 800;
+  color: var(--subtle);
+  font-weight: 900;
+  letter-spacing: .2px;
 }
 
-/* -------- Post Answer -------- */
+/* ---------- Post answer ---------- */
 #post-answer-box{
   margin-top: 12px;
   padding: 12px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
 }
 
 .post-summary{
   font-weight: 950;
   margin-bottom: 8px;
+  letter-spacing: .2px;
 }
 
 .expl-area{
   margin-top: 10px;
   padding: 10px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--r16);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
 }
 
 .expl-area p{
   margin: 6px 0 0 0;
-  color: var(--text);
+  color: rgba(255,255,255,.88);
+  line-height: 1.35;
 }
 
 .post-actions{
@@ -419,47 +562,51 @@ textarea[readonly]{
 }
 
 .post-actions .btn{ margin-top: 0; }
-
 .post-actions .btn.secondary{ width: 46%; }
 .post-actions .btn.primary{ width: 54%; }
 
-/* -------- Result -------- */
+/* ---------- Result ---------- */
 .score-circle{
-  width: 120px;
-  height: 120px;
+  width: 122px;
+  height: 122px;
   margin: 10px auto 6px;
   border-radius: 999px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background: rgba(0,0,0,.18);
-  border: 1px solid rgba(255,255,255,.16);
-  box-shadow: 0 10px 24px rgba(0,0,0,.20);
+
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.12), transparent 60%),
+    rgba(255,255,255,.05);
+
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 16px 36px rgba(0,0,0,.35);
 }
 
 #score-val{
   font-size: 44px;
   font-weight: 1000;
+  letter-spacing: .3px;
 }
 
 #speed-result{
   text-align:center;
   margin-top: 6px;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 900;
 }
 
+/* ---------- Info ---------- */
 .info-box{
   margin-top: 10px;
   padding: 12px;
-  border-radius: 16px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 900;
+  line-height: 1.35;
 }
 
-/* -------- My Quizzes List -------- */
+/* ---------- My quizzes ---------- */
 .myquizzes-list{
   display:flex;
   flex-direction:column;
@@ -469,21 +616,19 @@ textarea[readonly]{
 
 .quiz-item{
   padding: 12px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
 }
 
 .quiz-item .title{
   font-weight: 950;
   font-size: 16px;
+  letter-spacing: .15px;
 }
 
 .quiz-item .meta{
   margin-top: 6px;
   font-size: 12px;
-  color: var(--muted);
-  font-weight: 800;
+  color: var(--subtle);
+  font-weight: 900;
 }
 
 .quiz-item .actions{
@@ -495,40 +640,38 @@ textarea[readonly]{
 .quiz-item .actions .btn{
   margin-top:0;
   padding: 12px 12px;
-  border-radius: 14px;
+  border-radius: var(--r16);
   font-size: 14px;
 }
 
-/* -------- Review Table -------- */
+/* ---------- Review table ---------- */
 .review-block{
   margin-top: 12px;
   padding: 12px;
-  border-radius: 18px;
-  background: rgba(0,0,0,.16);
-  border: 1px solid rgba(255,255,255,.14);
 }
 
 .review-block h3{
   margin: 0 0 10px 0;
   font-size: 16px;
+  letter-spacing:.2px;
 }
 
 .review-table-wrap{
   overflow:auto;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.12);
+  border-radius: var(--r16);
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.14);
 }
 
 .review-table{
   width:100%;
   border-collapse: collapse;
-  min-width: 560px; /* чтобы таблица красиво скроллилась на телефоне */
+  min-width: 560px;
 }
 
 .review-table th, .review-table td{
   padding: 10px 10px;
-  border-bottom: 1px solid rgba(255,255,255,.10);
+  border-bottom: 1px solid rgba(255,255,255,.08);
   vertical-align: top;
   font-size: 13px;
 }
@@ -536,21 +679,22 @@ textarea[readonly]{
 .review-table th{
   color: var(--muted);
   text-align:left;
-  font-weight: 900;
-  background: rgba(255,255,255,.06);
+  font-weight: 950;
+  background: rgba(255,255,255,.045);
   position: sticky;
   top: 0;
+  backdrop-filter: blur(10px);
 }
 
-.status-ok{ color: rgba(34,197,94,.95); font-weight: 900; }
-.status-bad{ color: rgba(239,68,68,.95); font-weight: 900; }
-.status-skip{ color: rgba(250,204,21,.95); font-weight: 900; }
+.status-ok{ color: rgba(34,197,94,.92); font-weight: 950; }
+.status-bad{ color: rgba(239,68,68,.92); font-weight: 950; }
+.status-skip{ color: rgba(250,204,21,.92); font-weight: 950; }
 
-/* -------- Small screens -------- */
+/* ---------- Small screens ---------- */
 @media (max-width: 420px){
   .screen{ padding: 16px; }
   .brand-title{ font-size: 30px; }
-  .qsum-mini{ max-width: 52vw; }
+  .qsum-mini{ max-width: 54vw; }
   .post-actions{ flex-direction: column; }
   .post-actions .btn.secondary,
   .post-actions .btn.primary{ width: 100%; }
