@@ -8,22 +8,31 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
-<body class="show-bg">
-
-  <!-- фон ❓ -->
-  <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
+<body class="home">
+  <!-- Никаких падающих ❓ -->
+  <div class="bg-decor" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="grid"></div>
+  </div>
 
   <div class="container" id="main-container">
     <!-- HOME -->
     <div id="home-screen" class="screen fade-in">
-      <div class="brand">
-        <div class="brand-title">Quiz Master</div>
-        <div class="brand-subtitle">Создавай и побеждай!</div>
+      <div class="hero">
+        <div class="hero-title">Quiz Master</div>
+        <div class="hero-subtitle">Создавай викторины и делись ссылкой 🚀</div>
       </div>
 
-      <button onclick="showCreator()" class="btn primary">Создать викторину</button>
-      <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-      <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
+      <div class="home-card">
+        <button onclick="showCreator()" class="btn primary">Создать викторину</button>
+        <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
+
+        <div class="home-tip">
+          <span class="dot"></span>
+          Если у тебя есть ссылка — просто открой её в браузере.
+        </div>
+      </div>
     </div>
 
     <!-- MY QUIZZES -->
@@ -37,13 +46,29 @@
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
-      <!-- Панель навигации по вопросам -->
+      <!-- Панель управления: поиск + свернуть/развернуть + добавить -->
       <div class="qnav" id="question-nav">
-        <div class="qnav-left">
-          <div class="qnav-title">Вопросы:</div>
-          <div class="qnav-chips" id="qnav-chips"></div>
+        <div class="qnav-row">
+          <div class="qnav-title">Вопросы</div>
+
+          <div class="qnav-actions">
+            <button class="btn secondary qnav-mini" type="button" onclick="expandAll(true)">Развернуть</button>
+            <button class="btn secondary qnav-mini" type="button" onclick="expandAll(false)">Свернуть</button>
+            <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+          </div>
         </div>
-        <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+
+        <div class="qnav-row" style="margin-top:10px;">
+          <input id="question-search" class="qsearch" type="text" placeholder="Поиск по вопросам (текст/варианты)..." oninput="filterQuestions()" />
+        </div>
+
+        <!-- ВЕРХНЯЯ ТАБЛИЦА/НАВИГАЦИЯ: Вопрос 1, Вопрос 2, ... (не Q1/Q2) -->
+        <div class="qnav-chips" id="qnav-chips" aria-label="Навигация по вопросам"></div>
+
+        <!-- Подсказка drag&drop -->
+        <div class="qnav-hint">
+          Перетаскивай вопросы за <span class="drag-handle-hint">≡</span> чтобы менять порядок (Drag & Drop).
+        </div>
       </div>
 
       <div class="field">
@@ -53,23 +78,40 @@
 
       <div class="field">
         <label>Режим игры:</label>
-        <select id="quiz-mode">
+        <select id="quiz-mode" onchange="onModeChange()">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">Спидран (на общее время)</option>
+          <option value="speed">На общее время</option>
         </select>
       </div>
 
+      <!-- ВАЖНО: для timer обязательно задать время -->
       <div id="timer-setting" class="hidden field">
-        <label>Секунд на ответ:</label>
+        <label>Секунд на ответ (обязательно):</label>
         <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
+        <div class="field-hint">Без этого нельзя сгенерировать ссылку.</div>
       </div>
 
-      <div id="questions-container"></div>
+      <!-- НОВОЕ: для speed (общее время) -->
+      <div id="speed-setting" class="hidden field">
+        <label>Общее время на всю викторину (обязательно):</label>
+        <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" />
+        <div class="field-hint">Сколько секунд даётся на ответы на все вопросы.</div>
+      </div>
+
+      <!-- Контейнер вопросов (поддерживает Drag&Drop) -->
+      <div id="questions-container" class="questions-container" aria-label="Список вопросов"></div>
 
       <hr style="margin: 16px 0; opacity: 0.2;" />
+
+      <!-- Генерация ссылки (в скрипте нужно запретить, если timer/speed без времени) -->
       <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
       <button onclick="goHome()" class="btn secondary">На главную</button>
+
+      <!-- Примечание: при открытии создания новой викторины скрипт должен вызывать resetCreatorForm() -->
+      <div class="creator-note">
+        При создании новой викторины прошлые вопросы должны очищаться автоматически.
+      </div>
     </div>
 
     <!-- LINK -->
