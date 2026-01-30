@@ -15,12 +15,12 @@
         <p class="hint" id="main-hint">Создавай и побеждай!</p>
     </header>
 
-    <div id="home-screen" class="fade-in">
+    <div id="home-screen" class="screen fade-in">
         <button onclick="showCreator()" class="btn primary">Создать викторину</button>
         <p class="small-text">У вас есть ссылка? Просто перейдите по ней!</p>
     </div>
 
-    <div id="creator-screen" class="hidden">
+    <div id="creator-screen" class="screen hidden">
         <div class="field">
             <label>Режим игры:</label>
             <select id="quiz-mode">
@@ -42,7 +42,7 @@
         <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
     </div>
 
-    <div id="link-screen" class="hidden">
+    <div id="link-screen" class="screen hidden">
         <h3>Готово! 🚀</h3>
         <p>Поделись ссылкой с друзьями:</p>
         <textarea id="share-link" readonly></textarea>
@@ -50,7 +50,7 @@
         <button onclick="location.reload()" class="btn secondary">На главную</button>
     </div>
 
-    <div id="game-screen" class="hidden">
+    <div id="game-screen" class="screen hidden">
         <div id="timer-display" class="hidden" aria-live="polite">
             <div class="timer-top">
                 <span class="timer-icon">⏳</span>
@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    <div id="result-screen" class="hidden">
+    <div id="result-screen" class="screen hidden">
         <h2>Финиш! 🏁</h2>
         <div class="score-circle">
             <span id="score-val">0</span>
@@ -122,7 +122,9 @@
             <tbody id="leaderboard-body"></tbody>
         </table>
 
-        <button onclick="location.href = window.location.pathname" class="btn secondary" style="margin-top: 20px;">В главное меню</button>
+        <button onclick="location.href = window.location.pathname" class="btn secondary" style="margin-top: 20px;">
+            В главное меню
+        </button>
     </div>
 </div>
 
