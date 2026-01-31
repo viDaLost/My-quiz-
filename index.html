@@ -12,6 +12,19 @@
 </head>
 
 <body class="home">
+  <!-- App Bar (как в приложении) -->
+  <header class="appbar" id="appbar">
+    <button class="icon-btn" id="appback" onclick="appBack()" aria-label="Назад">
+      ‹
+    </button>
+
+    <div class="appbar-title" id="appbar-title">Quiz Master</div>
+
+    <button class="icon-btn" onclick="toggleTheme()" aria-label="Тема">
+      ☾
+    </button>
+  </header>
+
   <!-- старый фон ❓ можно удалить, но он скрыт стилями -->
   <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
 
@@ -27,6 +40,7 @@
       <button onclick="showCreator()" class="btn primary">Создать викторину</button>
       <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
 
+      <!-- Theme toggle (оставил, но теперь есть и в appbar) -->
       <button onclick="toggleTheme()" class="btn secondary" style="margin-top: 6px;">Тема</button>
     </div>
 
@@ -65,12 +79,22 @@
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
+      <!-- Панель навигации + Свернуть/Развернуть все -->
       <div class="qnav" id="question-nav">
         <div class="qnav-left">
           <div class="qnav-title">Вопросы:</div>
           <div class="qnav-chips" id="qnav-chips"></div>
         </div>
-        <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+
+        <div class="qnav-right">
+          <button class="btn secondary qnav-mini" type="button" onclick="collapseAllQuestions(true)">
+            Свернуть
+          </button>
+          <button class="btn secondary qnav-mini" type="button" onclick="collapseAllQuestions(false)">
+            Развернуть
+          </button>
+          <button class="btn secondary qnav-add" type="button" onclick="addQuestionField()">+ Вопрос</button>
+        </div>
       </div>
 
       <div class="field">
@@ -135,7 +159,8 @@
         <p id="question-text"></p>
       </div>
 
-      <div id="options-container"></div>
+      <!-- ВАЖНО: контейнер теперь "grid-ready" -->
+      <div id="options-container" class="options-grid"></div>
 
       <div id="post-answer-box" class="hidden">
         <div class="post-summary" id="post-summary"></div>
