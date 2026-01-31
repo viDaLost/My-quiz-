@@ -1,4 +1,4 @@
-/// -------------------------
+// -------------------------
 // STORAGE KEYS
 // -------------------------
 const COMPLETED_PREFIX = 'quiz_master_completed:';
@@ -34,12 +34,16 @@ window.addEventListener('load', () => {
   applySavedTheme();
   wireModeSelect();
   routeByHash();
+  updateAppBar(); // app-like
 });
 
 window.addEventListener('hashchange', () => {
   routeByHash();
 });
 
+// -------------------------
+// ROUTER
+// -------------------------
 function routeByHash() {
   const hash = window.location.hash || '';
   if (hash.includes('quiz=')) {
@@ -48,6 +52,74 @@ function routeByHash() {
   } else {
     setActiveScreen('home-screen');
   }
+  updateAppBar();
+}
+
+// -------------------------
+// APP BAR (как в приложении)
+// -------------------------
+function updateAppBar() {
+  const titleEl = document.getElementById('appbar-title');
+  const backBtn = document.getElementById('appback');
+
+  const active = getActiveScreenId();
+
+  // показываем appbar почти всегда, но на Home можем скрыть/упростить
+  const appbar = document.getElementById('appbar');
+  if (appbar) appbar.classList.toggle('appbar-hidden', active === 'home-screen');
+
+  if (backBtn) {
+    // назад скрываем только на home
+    backBtn.classList.toggle('hidden', active === 'home-screen');
+  }
+
+  if (!titleEl) return;
+
+  const titles = {
+    'home-screen': 'Quiz Master',
+    'creator-screen': 'Создание',
+    'myquizzes-screen': 'Мои викторины',
+    'link-screen': 'Ссылка',
+    'preview-screen': 'Викторина',
+    'game-screen': 'Игра',
+    'result-screen': 'Результат',
+  };
+
+  titleEl.textContent = titles[active] || 'Quiz Master';
+}
+
+// простая логика "назад"
+function appBack() {
+  const active = getActiveScreenId();
+
+  if (active === 'creator-screen' || active === 'myquizzes-screen' || active === 'link-screen') {
+    goHome();
+    return;
+  }
+
+  if (active === 'preview-screen' || active === 'game-screen' || active === 'result-screen') {
+    goHomeClearHash();
+    return;
+  }
+
+  goHome();
+}
+
+function getActiveScreenId() {
+  const ids = [
+    'home-screen',
+    'myquizzes-screen',
+    'creator-screen',
+    'link-screen',
+    'preview-screen',
+    'game-screen',
+    'result-screen'
+  ];
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) return id;
+  }
+  return 'home-screen';
 }
 
 // -------------------------
@@ -84,6 +156,7 @@ function setActiveScreen(id) {
   });
 
   document.body.classList.toggle('home', id === 'home-screen');
+  updateAppBar();
 }
 
 function goHome() {
@@ -120,7 +193,19 @@ function showCreator() {
   buildQuestionNav();
 }
 
+// ✅ Свернуть/развернуть все вопросы
+function collapseAllQuestions(collapse = true) {
+  const blocks = [...document.querySelectorAll('.qdetails')];
+  blocks.forEach((d) => (d.open = !collapse));
+
+  // если свернули всё — активным считаем первый
+  if (collapse && blocks[0]) blocks[0].open = false;
+
+  buildQuestionNav();
+}
+
 function addQuestionField() {
+  // оставим только новый открытым (по UX)
   document.querySelectorAll('.qdetails').forEach((d) => (d.open = false));
 
   const container = document.getElementById('questions-container');
@@ -363,14 +448,12 @@ function generateLink() {
 }
 
 async function copyTextSmart(text) {
-  // iOS/Safari: clipboard api может быть недоступен в некоторых контекстах
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
       return true;
     }
   } catch {}
-  // fallback
   try {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -509,7 +592,7 @@ function showPreviewScreen() {
   const count = currentQuiz?.d?.length || 0;
 
   const titleEl = document.getElementById('preview-title');
-  const cEl = document.getElementById('preview-questions'); // FIX: правильный id
+  const cEl = document.getElementById('preview-questions'); // FIX
   const mEl = document.getElementById('preview-mode');
   const timePill = document.getElementById('preview-time-pill');
   const timeEl = document.getElementById('preview-time');
@@ -555,7 +638,6 @@ function startQuizRun() {
   totalTimer.active = false;
   totalTimer.timeoutFired = false;
 
-  // гарантированно гасим любой предыдущий интервал
   stopAllTimers();
 
   setActiveScreen('game-screen');
@@ -575,12 +657,9 @@ function showQuestion() {
 
   questionLocked = false;
 
-  const postBox = document.getElementById('post-answer-box');
-  const explArea = document.getElementById('explanation-area');
-  const btnExpl = document.getElementById('btn-show-expl');
-  if (postBox) postBox.classList.add('hidden');
-  if (explArea) explArea.classList.add('hidden');
-  if (btnExpl) btnExpl.classList.add('hidden');
+  document.getElementById('post-answer-box')?.classList.add('hidden');
+  document.getElementById('explanation-area')?.classList.add('hidden');
+  document.getElementById('btn-show-expl')?.classList.add('hidden');
 
   if (!currentQuiz || currentQIndex >= currentQuiz.d.length) return finishGame();
 
@@ -592,6 +671,17 @@ function showQuestion() {
   if (!container) return;
 
   container.innerHTML = '';
+
+  // ✅ умная раскладка ответов
+  // 2-3: по центру (1 колонка)
+  // 4: 2 колонки по 2
+  // 5: 2 колонки и 5-й по центру снизу
+  const count = q.o.length;
+  container.classList.remove('opt-1col', 'opt-2col', 'opt-5center');
+  if (count <= 3) container.classList.add('opt-1col');
+  else if (count === 4) container.classList.add('opt-2col');
+  else if (count === 5) container.classList.add('opt-2col', 'opt-5center');
+  else container.classList.add('opt-1col');
 
   q.o.forEach((opt, idx) => {
     const b = document.createElement('button');
@@ -743,7 +833,7 @@ function stopAllTimers() {
 // TIMER (per-question)
 // -------------------------
 function startTimer(sec) {
-  stopTimer(); // защита от дублей
+  stopTimer();
 
   const disp = document.getElementById('timer-display');
   const digits = document.getElementById('time-left');
@@ -806,7 +896,7 @@ function stopTimer() {
 // TIMER (total quiz)
 // -------------------------
 function startTotalTimer(sec) {
-  stopTotalTimer(); // защита от дублей
+  stopTotalTimer();
 
   const disp = document.getElementById('timer-display');
   const digits = document.getElementById('time-left');
