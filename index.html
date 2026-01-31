@@ -8,51 +8,34 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
-<body class="show-bg">
-
-  <!-- фон ❓ (оставлен, но мы отключим визуально в style.css) -->
-  <div class="bg-questions" aria-hidden="true" id="bg-questions"></div>
+<body>
 
   <div class="container" id="main-container">
 
-    <!-- HOME (центр экрана) -->
-    <div id="home-screen" class="screen fade-in home-center">
+    <!-- HOME -->
+    <div id="home-screen" class="screen fade-in">
       <div class="brand">
         <div class="brand-title">Quiz Master</div>
         <div class="brand-subtitle">Создавай и делись своей викториной</div>
       </div>
 
       <div class="home-actions">
-        <button onclick="showCreator()" class="btn primary">Создать викторину</button>
-        <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
+        <button type="button" onclick="showCreator()" class="btn primary">Создать викторину</button>
+        <button type="button" onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
       </div>
-    </div>
-
-    <!-- INTRO (экран перед стартом по ссылке) -->
-    <div id="intro-screen" class="screen hidden fade-in intro-center">
-      <div class="intro-title" id="intro-quiz-title">Викторина</div>
-
-      <div class="intro-meta">
-        <div class="intro-pill" id="intro-count">0 вопросов</div>
-        <div class="intro-pill" id="intro-mode">Режим: —</div>
-      </div>
-
-      <button class="btn primary" onclick="startQuizFromIntro()">Пройти викторину</button>
-      <button class="btn secondary" onclick="goHomeClearHash()">На главную</button>
     </div>
 
     <!-- MY QUIZZES -->
     <div id="myquizzes-screen" class="screen hidden">
       <h3 class="screen-title">📌 Мои викторины</h3>
       <div id="myquizzes-list" class="myquizzes-list"></div>
-      <button onclick="goHome()" class="btn secondary" style="margin-top: 14px;">На главную</button>
+      <button type="button" onclick="goHome()" class="btn secondary" style="margin-top: 14px;">На главную</button>
     </div>
 
     <!-- CREATOR -->
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
-      <!-- Панель навигации по вопросам -->
       <div class="qnav" id="question-nav">
         <div class="qnav-left">
           <div class="qnav-title">Вопросы:</div>
@@ -71,26 +54,27 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="total">Определённое время на всю викторину</option>
-          <option value="speed">Ответь как можно быстрее</option>
+          <option value="total">Время на всю викторину</option>
         </select>
       </div>
 
+      <!-- таймер на вопрос -->
       <div id="timer-setting" class="hidden field">
-        <label>Секунд на ответ (каждый вопрос):</label>
+        <label>Секунд на ответ:</label>
         <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
       </div>
 
+      <!-- таймер на всю викторину -->
       <div id="total-setting" class="hidden field">
         <label>Секунд на всю викторину:</label>
-        <input type="number" id="total-limit" placeholder="Например: 60" min="1" />
+        <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" />
       </div>
 
       <div id="questions-container"></div>
 
       <hr style="margin: 16px 0; opacity: 0.2;" />
-      <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
-      <button onclick="goHome()" class="btn secondary">На главную</button>
+      <button type="button" onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
+      <button type="button" onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
     <!-- LINK -->
@@ -98,8 +82,25 @@
       <h3 class="screen-title">Готово! 🚀</h3>
       <p>Поделись ссылкой с друзьями:</p>
       <textarea id="share-link" readonly></textarea>
-      <button onclick="copyLink()" class="btn primary">Копировать ссылку</button>
-      <button onclick="goHome()" class="btn secondary">На главную</button>
+      <button type="button" onclick="copyLink()" class="btn primary">Копировать ссылку</button>
+      <button type="button" onclick="goHome()" class="btn secondary">На главную</button>
+    </div>
+
+    <!-- INTRO (показывается при переходе по ссылке) -->
+    <div id="intro-screen" class="screen hidden">
+      <div class="intro-wrap">
+        <div id="intro-title" class="intro-title"></div>
+
+        <div class="intro-pills">
+          <div class="pill" id="intro-questions"></div>
+          <div class="pill" id="intro-mode"></div>
+        </div>
+
+        <div class="intro-actions">
+          <button type="button" class="btn primary" onclick="startFromIntro()">Пройти викторину</button>
+          <button type="button" class="btn secondary" onclick="goHomeClearHash()">На главную</button>
+        </div>
+      </div>
     </div>
 
     <!-- GAME -->
@@ -122,6 +123,7 @@
 
       <div id="options-container"></div>
 
+      <!-- пост-блок нужен для classic/timer, в total мы его скрываем -->
       <div id="post-answer-box" class="hidden">
         <div class="post-summary" id="post-summary"></div>
 
@@ -131,10 +133,10 @@
         </div>
 
         <div class="post-actions">
-          <button id="btn-show-expl" onclick="toggleExplanation(true)" class="btn secondary hidden">
+          <button id="btn-show-expl" type="button" onclick="toggleExplanation(true)" class="btn secondary hidden">
             Показать пояснение
           </button>
-          <button onclick="nextQuestion()" class="btn primary">Далее ➡</button>
+          <button type="button" onclick="nextQuestion()" class="btn primary">Далее ➡</button>
         </div>
       </div>
     </div>
@@ -169,10 +171,11 @@
         </div>
       </div>
 
-      <button onclick="goHomeClearHash()" class="btn secondary" style="margin-top: 20px;">
+      <button type="button" onclick="goHomeClearHash()" class="btn secondary" style="margin-top: 20px;">
         В главное меню
       </button>
     </div>
+
   </div>
 
   <script src="script.js"></script>
