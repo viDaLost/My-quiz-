@@ -1,46 +1,19 @@
-<!-- index.html — обновлённый целиком -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#4f46e5" />
   <title>Quiz Master</title>
+
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
 
 <body class="home">
-  <!-- Верхняя мини-панель (кнопка темы) -->
-  <div
-    style="
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      z-index: 20;
-      display: flex;
-      gap: 10px;
-      pointer-events: none;
-    "
-  >
-    <button
-      id="theme-toggle"
-      class="btn secondary"
-      type="button"
-      title="Сменить тему"
-      style="
-        width: auto !important;
-        padding: 10px 12px;
-        border-radius: 14px;
-        font-size: 14px;
-        pointer-events: auto;
-      "
-    >
-      🌓 Тема
-    </button>
-  </div>
-
   <div class="container" id="main-container">
+
     <!-- HOME -->
     <div id="home-screen" class="screen fade-in">
       <div class="brand">
@@ -50,27 +23,18 @@
 
       <button onclick="showCreator()" class="btn primary">Создать викторину</button>
       <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
-    </div>
 
-    <!-- PREVIEW (экран по ссылке перед стартом) -->
-    <div id="preview-screen" class="screen hidden">
-      <div class="preview-card">
-        <h2 class="preview-title" id="preview-title">Викторина</h2>
-
-        <div class="preview-badges">
-          <div class="preview-badge" id="preview-count">0 вопросов</div>
-          <div class="preview-badge" id="preview-mode">Режим: —</div>
-        </div>
-
-        <div class="preview-actions">
-          <button id="btn-start-quiz" class="btn primary" type="button">
-            Пройти викторину
-          </button>
-          <button onclick="goHomeClearHash()" class="btn secondary" type="button">
-            На главную
-          </button>
-        </div>
-      </div>
+      <!-- ТЕМА -->
+      <button
+        id="theme-toggle"
+        class="btn secondary"
+        type="button"
+        onclick="toggleTheme()"
+        style="width:auto; padding:12px 14px; margin-top:14px;"
+        aria-label="Переключить тему"
+      >
+        Тема
+      </button>
     </div>
 
     <!-- MY QUIZZES -->
@@ -103,16 +67,18 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
-          <option value="speed">Ответь как можно быстрее</option>
           <option value="total">Время на всю викторину</option>
+          <option value="speed">Ответь как можно быстрее</option>
         </select>
       </div>
 
+      <!-- таймер на вопрос -->
       <div id="timer-setting" class="hidden field">
-        <label>Секунд на ответ:</label>
+        <label>Секунд на ответ (на каждый вопрос):</label>
         <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
       </div>
 
+      <!-- таймер на всю викторину -->
       <div id="total-timer-setting" class="hidden field">
         <label>Секунд на всю викторину:</label>
         <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" />
@@ -128,14 +94,45 @@
     <!-- LINK -->
     <div id="link-screen" class="screen hidden">
       <h3 class="screen-title">Готово! 🚀</h3>
-      <p style="color: var(--muted); margin-top: 0;">Поделись ссылкой с друзьями:</p>
+      <p>Поделись ссылкой с друзьями:</p>
       <textarea id="share-link" readonly></textarea>
       <button onclick="copyLink()" class="btn primary">Копировать ссылку</button>
       <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
+    <!-- PREVIEW / INTRO (перед стартом викторины по ссылке) -->
+    <div id="preview-screen" class="screen hidden">
+      <div id="preview-title">Викторина</div>
+
+      <div style="display:grid; gap:10px; justify-items:center; margin: 8px 0 16px;">
+        <div class="preview-pill">
+          <span style="opacity:.85;">Вопросов:</span>
+          <span id="preview-count" style="font-weight:900;">0</span>
+        </div>
+
+        <div class="preview-pill">
+          <span style="opacity:.85;">Режим:</span>
+          <span id="preview-mode" style="font-weight:900;">—</span>
+        </div>
+
+        <div class="preview-pill hidden" id="preview-time-pill">
+          <span style="opacity:.85;">Время:</span>
+          <span id="preview-time" style="font-weight:900;">—</span>
+        </div>
+      </div>
+
+      <button id="btn-start-quiz" class="btn primary" onclick="startQuizFromPreview()">
+        Пройти викторину
+      </button>
+
+      <button class="btn secondary" onclick="goHomeClearHash()" style="margin-top:14px;">
+        В главное меню
+      </button>
+    </div>
+
     <!-- GAME -->
     <div id="game-screen" class="screen hidden">
+
       <!-- таймер (используется и для per-question, и для total) -->
       <div id="timer-display" class="hidden" aria-live="polite">
         <div class="timer-top">
@@ -143,6 +140,7 @@
           <span id="time-left" class="timer-digits">0</span>
           <span class="timer-sec">сек</span>
         </div>
+
         <div class="timer-bar" role="progressbar" aria-label="Осталось времени">
           <div id="timer-bar-fill" class="timer-bar-fill"></div>
         </div>
@@ -159,14 +157,17 @@
 
         <div id="explanation-area" class="hidden expl-area">
           <strong>Пояснение:</strong>
-          <p id="explanation-text" style="margin:8px 0 0;"></p>
+          <p id="explanation-text"></p>
         </div>
 
         <div class="post-actions">
           <button id="btn-show-expl" onclick="toggleExplanation(true)" class="btn secondary hidden">
             Показать пояснение
           </button>
-          <button onclick="nextQuestion()" class="btn primary">Далее ➡</button>
+
+          <!-- В классике/таймере на вопрос — можно “Далее”.
+               В режиме total мы будем автопереключать в script.js (кнопку можно прятать логикой). -->
+          <button id="btn-next" onclick="nextQuestion()" class="btn primary">Далее ➡</button>
         </div>
       </div>
     </div>
@@ -174,19 +175,17 @@
     <!-- RESULT -->
     <div id="result-screen" class="screen hidden">
       <h2 class="screen-title">Финиш! 🏁</h2>
-
       <div class="score-circle">
         <span id="score-val">0</span>
       </div>
-
-      <p id="speed-result" class="hidden" style="text-align:center; color: var(--muted); font-weight: 900;"></p>
+      <p id="speed-result" class="hidden"></p>
 
       <div id="already-completed" class="hidden info-box">
         Вы уже проходили эту викторину на этом устройстве. Показаны сохранённые результаты.
       </div>
 
       <div id="answer-review" class="review-block hidden">
-        <h3 style="margin:0 0 10px;">🧾 Разбор ответов</h3>
+        <h3>🧾 Разбор ответов</h3>
         <div class="review-table-wrap">
           <table class="review-table">
             <thead>
@@ -207,6 +206,7 @@
         В главное меню
       </button>
     </div>
+
   </div>
 
   <script src="script.js"></script>
