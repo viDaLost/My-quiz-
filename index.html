@@ -1,3 +1,4 @@
+<!-- index.html — обновлённый целиком -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,10 +9,38 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
-<body>
+
+<body class="home">
+  <!-- Верхняя мини-панель (кнопка темы) -->
+  <div
+    style="
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      pointer-events: none;
+    "
+  >
+    <button
+      id="theme-toggle"
+      class="btn secondary"
+      type="button"
+      title="Сменить тему"
+      style="
+        width: auto !important;
+        padding: 10px 12px;
+        border-radius: 14px;
+        font-size: 14px;
+        pointer-events: auto;
+      "
+    >
+      🌓 Тема
+    </button>
+  </div>
 
   <div class="container" id="main-container">
-
     <!-- HOME -->
     <div id="home-screen" class="screen fade-in">
       <div class="brand">
@@ -19,9 +48,28 @@
         <div class="brand-subtitle">Создавай и делись своей викториной</div>
       </div>
 
-      <div class="home-actions">
-        <button type="button" onclick="showCreator()" class="btn primary">Создать викторину</button>
-        <button type="button" onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
+      <button onclick="showCreator()" class="btn primary">Создать викторину</button>
+      <button onclick="showMyQuizzes()" class="btn secondary">Мои викторины</button>
+    </div>
+
+    <!-- PREVIEW (экран по ссылке перед стартом) -->
+    <div id="preview-screen" class="screen hidden">
+      <div class="preview-card">
+        <h2 class="preview-title" id="preview-title">Викторина</h2>
+
+        <div class="preview-badges">
+          <div class="preview-badge" id="preview-count">0 вопросов</div>
+          <div class="preview-badge" id="preview-mode">Режим: —</div>
+        </div>
+
+        <div class="preview-actions">
+          <button id="btn-start-quiz" class="btn primary" type="button">
+            Пройти викторину
+          </button>
+          <button onclick="goHomeClearHash()" class="btn secondary" type="button">
+            На главную
+          </button>
+        </div>
       </div>
     </div>
 
@@ -29,13 +77,14 @@
     <div id="myquizzes-screen" class="screen hidden">
       <h3 class="screen-title">📌 Мои викторины</h3>
       <div id="myquizzes-list" class="myquizzes-list"></div>
-      <button type="button" onclick="goHome()" class="btn secondary" style="margin-top: 14px;">На главную</button>
+      <button onclick="goHome()" class="btn secondary" style="margin-top: 14px;">На главную</button>
     </div>
 
     <!-- CREATOR -->
     <div id="creator-screen" class="screen hidden">
       <h3 class="screen-title">🛠 Создание викторины</h3>
 
+      <!-- Панель навигации по вопросам -->
       <div class="qnav" id="question-nav">
         <div class="qnav-left">
           <div class="qnav-title">Вопросы:</div>
@@ -54,18 +103,17 @@
         <select id="quiz-mode">
           <option value="classic">Классика (результат в конце)</option>
           <option value="timer">Таймер на каждый вопрос</option>
+          <option value="speed">Ответь как можно быстрее</option>
           <option value="total">Время на всю викторину</option>
         </select>
       </div>
 
-      <!-- таймер на вопрос -->
       <div id="timer-setting" class="hidden field">
         <label>Секунд на ответ:</label>
         <input type="number" id="time-limit" placeholder="Например: 15" min="1" />
       </div>
 
-      <!-- таймер на всю викторину -->
-      <div id="total-setting" class="hidden field">
+      <div id="total-timer-setting" class="hidden field">
         <label>Секунд на всю викторину:</label>
         <input type="number" id="total-time-limit" placeholder="Например: 60" min="1" />
       </div>
@@ -73,45 +121,28 @@
       <div id="questions-container"></div>
 
       <hr style="margin: 16px 0; opacity: 0.2;" />
-      <button type="button" onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
-      <button type="button" onclick="goHome()" class="btn secondary">На главную</button>
+      <button onclick="generateLink()" class="btn primary">Генерировать ссылку</button>
+      <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
     <!-- LINK -->
     <div id="link-screen" class="screen hidden">
       <h3 class="screen-title">Готово! 🚀</h3>
-      <p>Поделись ссылкой с друзьями:</p>
+      <p style="color: var(--muted); margin-top: 0;">Поделись ссылкой с друзьями:</p>
       <textarea id="share-link" readonly></textarea>
-      <button type="button" onclick="copyLink()" class="btn primary">Копировать ссылку</button>
-      <button type="button" onclick="goHome()" class="btn secondary">На главную</button>
-    </div>
-
-    <!-- INTRO (показывается при переходе по ссылке) -->
-    <div id="intro-screen" class="screen hidden">
-      <div class="intro-wrap">
-        <div id="intro-title" class="intro-title"></div>
-
-        <div class="intro-pills">
-          <div class="pill" id="intro-questions"></div>
-          <div class="pill" id="intro-mode"></div>
-        </div>
-
-        <div class="intro-actions">
-          <button type="button" class="btn primary" onclick="startFromIntro()">Пройти викторину</button>
-          <button type="button" class="btn secondary" onclick="goHomeClearHash()">На главную</button>
-        </div>
-      </div>
+      <button onclick="copyLink()" class="btn primary">Копировать ссылку</button>
+      <button onclick="goHome()" class="btn secondary">На главную</button>
     </div>
 
     <!-- GAME -->
     <div id="game-screen" class="screen hidden">
+      <!-- таймер (используется и для per-question, и для total) -->
       <div id="timer-display" class="hidden" aria-live="polite">
         <div class="timer-top">
           <span class="timer-icon">⏳</span>
           <span id="time-left" class="timer-digits">0</span>
           <span class="timer-sec">сек</span>
         </div>
-
         <div class="timer-bar" role="progressbar" aria-label="Осталось времени">
           <div id="timer-bar-fill" class="timer-bar-fill"></div>
         </div>
@@ -123,20 +154,19 @@
 
       <div id="options-container"></div>
 
-      <!-- пост-блок нужен для classic/timer, в total мы его скрываем -->
       <div id="post-answer-box" class="hidden">
         <div class="post-summary" id="post-summary"></div>
 
         <div id="explanation-area" class="hidden expl-area">
           <strong>Пояснение:</strong>
-          <p id="explanation-text"></p>
+          <p id="explanation-text" style="margin:8px 0 0;"></p>
         </div>
 
         <div class="post-actions">
-          <button id="btn-show-expl" type="button" onclick="toggleExplanation(true)" class="btn secondary hidden">
+          <button id="btn-show-expl" onclick="toggleExplanation(true)" class="btn secondary hidden">
             Показать пояснение
           </button>
-          <button type="button" onclick="nextQuestion()" class="btn primary">Далее ➡</button>
+          <button onclick="nextQuestion()" class="btn primary">Далее ➡</button>
         </div>
       </div>
     </div>
@@ -144,17 +174,19 @@
     <!-- RESULT -->
     <div id="result-screen" class="screen hidden">
       <h2 class="screen-title">Финиш! 🏁</h2>
+
       <div class="score-circle">
         <span id="score-val">0</span>
       </div>
-      <p id="speed-result" class="hidden"></p>
+
+      <p id="speed-result" class="hidden" style="text-align:center; color: var(--muted); font-weight: 900;"></p>
 
       <div id="already-completed" class="hidden info-box">
         Вы уже проходили эту викторину на этом устройстве. Показаны сохранённые результаты.
       </div>
 
       <div id="answer-review" class="review-block hidden">
-        <h3>🧾 Разбор ответов</h3>
+        <h3 style="margin:0 0 10px;">🧾 Разбор ответов</h3>
         <div class="review-table-wrap">
           <table class="review-table">
             <thead>
@@ -171,11 +203,10 @@
         </div>
       </div>
 
-      <button type="button" onclick="goHomeClearHash()" class="btn secondary" style="margin-top: 20px;">
+      <button onclick="goHomeClearHash()" class="btn secondary" style="margin-top: 20px;">
         В главное меню
       </button>
     </div>
-
   </div>
 
   <script src="script.js"></script>
