@@ -257,6 +257,9 @@ body.home #home-screen .btn + .btn { margin-top: 8px; }
 
 .screen .btn { width: 100%; }
 
+/* IMPORTANT:
+   Это правило оставляем для обычных кнопок на больших экранах,
+   но для ответов в игре ниже будет жёсткий override (иначе ломает сетку на iPhone). */
 @media (min-width: 420px) {
   .screen .btn { width: auto; min-width: 220px; }
 }
@@ -745,6 +748,49 @@ input:focus, select:focus, textarea:focus {
 #share-link {
   width: 100%;
   min-height: 92px;
+}
+
+/* =========================
+   LINK SCREEN CENTER FIX
+   ========================= */
+#link-screen {
+  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#link-screen textarea#share-link {
+  width: 100%;
+  max-width: 520px;
+}
+
+#link-screen .btn {
+  width: min(320px, 86vw);
+}
+
+#link-screen > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* =========================
+   OPTIONS GRID iPhone BUG FIX
+   (перебиваем min-width:220px из @media (min-width:420px))
+   ========================= */
+#options-container .option-btn {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+#options-container.opt-1col .option-btn {
+  width: min(420px, 100%) !important;
+}
+
+#options-container.opt-2col .option-btn {
+  justify-self: stretch;
 }
 
 /* ---- SMALL DEVICES ---- */
