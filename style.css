@@ -1,6 +1,6 @@
 /* =========================
    Quiz Master — Premium UI
-   (no glass / app-like)
+   (app-like)
    ========================= */
 
 /* ---- THEME TOKENS ---- */
@@ -35,6 +35,10 @@
   --r2: 14px;
 
   --maxw: 520px;
+
+  /* safe-area (iOS) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 /* Light theme */
@@ -71,17 +75,85 @@ body {
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
+  padding-top: calc(56px + var(--sat)); /* место под appbar */
 }
 
 .hidden { display: none !important; }
 
+/* =========================
+   APP BAR (как приложение)
+   ========================= */
+.appbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(56px + var(--sat));
+  padding-top: var(--sat);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  border-bottom: 1px solid var(--stroke);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  z-index: 50;
+}
+
+:root[data-theme="light"] .appbar {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.appbar-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  margin: 6px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.icon-btn:active { transform: scale(0.98); }
+
+.appbar-title {
+  flex: 1;
+  text-align: center;
+  font-weight: 1000;
+  letter-spacing: .2px;
+  font-size: 1.02rem;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   LAYOUT
+   ========================= */
 .container {
   width: 100%;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 18px 16px 28px;
+  padding: 14px 16px calc(24px + var(--sab));
 }
 
+/* Screens */
 .screen {
   width: 100%;
   background: var(--surface);
@@ -91,15 +163,14 @@ body {
   padding: 18px 16px;
 }
 
-.fade-in {
-  animation: fadeIn .25s ease-out;
-}
+.fade-in { animation: fadeIn .25s ease-out; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Titles */
 .screen-title {
   margin: 0 0 12px;
   font-size: 1.15rem;
@@ -114,9 +185,7 @@ body.home {
   justify-content: center;
 }
 
-body.home .container {
-  padding: 0 16px;
-}
+body.home .container { padding: 0 16px; }
 
 body.home #home-screen {
   min-height: 72vh;
@@ -156,7 +225,7 @@ body.home #home-screen {
   border-radius: 16px;
   padding: 12px 16px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: transform .06s ease, filter .12s ease, background .12s ease, border-color .12s ease;
   user-select: none;
@@ -180,7 +249,6 @@ body.home #home-screen {
 .btn.primary:hover { filter: brightness(1.03); }
 .btn.secondary:hover { filter: brightness(1.03); }
 
-/* Home buttons not full width */
 body.home #home-screen .btn {
   width: min(320px, 86vw);
 }
@@ -190,15 +258,50 @@ body.home #home-screen .btn + .btn { margin-top: 8px; }
 .screen .btn { width: 100%; }
 
 @media (min-width: 420px) {
-  .screen .btn {
-    width: auto;
-    min-width: 220px;
-  }
+  .screen .btn { width: auto; min-width: 220px; }
+}
+
+/* =========================
+   GAME: OPTIONS LAYOUT (2/3/4/5)
+   ========================= */
+
+/* общий контейнер */
+#options-container.options-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+/* 2-3 варианта: одна колонка + центрирование блока */
+#options-container.opt-1col {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+/* кнопки в 1 колонке — не на всю ширину, а аккуратно по центру */
+#options-container.opt-1col .option-btn {
+  width: min(420px, 100%);
+}
+
+/* 4 варианта: 2 колонки */
+#options-container.opt-2col {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* кнопки в 2 колонках занимают ширину ячейки */
+#options-container.opt-2col .option-btn {
+  width: 100%;
+}
+
+/* 5 вариантов: последний по центру под колонками */
+#options-container.opt-5center .option-btn:last-child {
+  grid-column: 1 / span 2;
+  justify-self: center;
+  width: min(420px, 100%);
 }
 
 /* Option buttons */
 .option-btn {
-  width: 100%;
   text-align: left;
   border-color: var(--stroke);
   background: var(--surface2);
@@ -206,9 +309,9 @@ body.home #home-screen .btn + .btn { margin-top: 8px; }
   box-shadow: none;
   position: relative;
   padding-right: 46px;
-  margin-bottom: 10px;
 }
 
+/* Bright correct / wrong */
 .option-btn.correct {
   border-color: rgba(24,224,111,0.65);
   background: linear-gradient(180deg, rgba(24,224,111,0.18), rgba(11,189,86,0.10));
@@ -268,10 +371,7 @@ input, select, textarea {
   outline: none;
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical;
-}
+textarea { min-height: 100px; resize: vertical; }
 
 input:focus, select:focus, textarea:focus {
   border-color: rgba(109,92,255,0.55);
@@ -286,7 +386,6 @@ input:focus, select:focus, textarea:focus {
   padding: 16px 14px;
   box-shadow: var(--shadow2);
   margin-bottom: 14px;
-  position: relative;
 }
 
 #question-text {
@@ -303,8 +402,6 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
 }
 
-#options-container { margin-top: 6px; }
-
 /* ---- POST ANSWER BOX ---- */
 #post-answer-box {
   margin-top: 12px;
@@ -314,7 +411,7 @@ input:focus, select:focus, textarea:focus {
 
 .post-summary {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 900;
   margin-bottom: 10px;
 }
 
@@ -324,9 +421,7 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: wrap;
 }
 
-.post-actions .btn {
-  flex: 1 1 180px;
-}
+.post-actions .btn { flex: 1 1 180px; }
 
 /* ---- TIMER ---- */
 #timer-display {
@@ -343,12 +438,12 @@ input:focus, select:focus, textarea:focus {
   gap: 10px;
   justify-content: center;
   margin-bottom: 10px;
-  font-weight: 900;
+  font-weight: 1000;
 }
 
 .timer-icon { font-size: 1.2rem; }
 .timer-digits { font-size: 1.5rem; }
-.timer-sec { color: var(--muted); font-weight: 700; }
+.timer-sec { color: var(--muted); font-weight: 800; }
 
 .timer-top.danger .timer-digits { color: var(--warn); }
 
@@ -360,9 +455,7 @@ input:focus, select:focus, textarea:focus {
   overflow: hidden;
 }
 
-:root[data-theme="light"] .timer-bar {
-  background: rgba(15,20,40,0.08);
-}
+:root[data-theme="light"] .timer-bar { background: rgba(15,20,40,0.08); }
 
 .timer-bar-fill {
   height: 100%;
@@ -372,13 +465,8 @@ input:focus, select:focus, textarea:focus {
   transition: width .08s linear;
 }
 
-.timer-bar-fill.danger {
-  background: linear-gradient(90deg, var(--warn), #ff5c3d);
-}
-
-.timer-bar-fill.blink {
-  animation: blink 0.6s infinite;
-}
+.timer-bar-fill.danger { background: linear-gradient(90deg, var(--warn), #ff5c3d); }
+.timer-bar-fill.blink { animation: blink 0.6s infinite; }
 
 @keyframes blink {
   0%,100% { filter: brightness(1); }
@@ -406,7 +494,7 @@ input:focus, select:focus, textarea:focus {
 
 .preview-title {
   font-size: 2rem;
-  font-weight: 900;
+  font-weight: 1000;
   margin: 0 0 12px;
 }
 
@@ -423,15 +511,13 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--stroke);
   border-radius: 999px;
   padding: 9px 12px;
-  font-weight: 800;
+  font-weight: 900;
   color: var(--text);
 }
 
-.pill .muted { color: var(--muted); font-weight: 700; }
+.pill .muted { color: var(--muted); font-weight: 800; }
 
-.preview-actions .btn {
-  width: min(320px, 86vw);
-}
+.preview-actions .btn { width: min(320px, 86vw); }
 
 /* ---- MY QUIZZES ---- */
 .myquizzes-list { margin-top: 10px; }
@@ -444,10 +530,7 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 12px;
 }
 
-.quiz-item .title {
-  font-weight: 900;
-  margin-bottom: 6px;
-}
+.quiz-item .title { font-weight: 1000; margin-bottom: 6px; }
 
 .quiz-item .meta {
   color: var(--muted);
@@ -499,14 +582,14 @@ input:focus, select:focus, textarea:focus {
 
 .review-table th {
   color: var(--muted);
-  font-weight: 900;
+  font-weight: 1000;
   text-align: left;
   background: var(--surface2);
 }
 
-.status-ok { color: var(--ok); font-weight: 900; }
-.status-bad { color: var(--bad); font-weight: 900; }
-.status-skip { color: var(--warn); font-weight: 900; }
+.status-ok { color: var(--ok); font-weight: 1000; }
+.status-bad { color: var(--bad); font-weight: 1000; }
+.status-skip { color: var(--warn); font-weight: 1000; }
 
 /* ---- CREATOR: qnav ---- */
 .qnav {
@@ -518,8 +601,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .qnav-left { flex: 1; }
-.qnav-title { color: var(--muted); font-weight: 900; margin-bottom: 8px; }
-
+.qnav-title { color: var(--muted); font-weight: 1000; margin-bottom: 8px; }
 .qnav-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .qchip {
@@ -528,13 +610,28 @@ input:focus, select:focus, textarea:focus {
   color: var(--text);
   border-radius: 999px;
   padding: 8px 12px;
-  font-weight: 900;
+  font-weight: 1000;
   cursor: pointer;
 }
 
 .qchip.active {
   border-color: rgba(109,92,255,0.6);
   box-shadow: 0 0 0 4px rgba(109,92,255,0.14);
+}
+
+.qnav-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.qnav-mini {
+  width: auto;
+  min-width: 110px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 0.95rem;
 }
 
 .qnav-add { width: auto; min-width: 140px; }
@@ -559,11 +656,11 @@ input:focus, select:focus, textarea:focus {
 
 .qdetails summary::-webkit-details-marker { display: none; }
 
-.qsum-title { font-weight: 900; }
+.qsum-title { font-weight: 1000; }
 .qsum-mini { color: var(--muted); font-size: 0.92rem; margin-top: 2px; }
-
 .qremove { width: auto; padding: 10px 12px; border-radius: 14px; }
 
+/* options rows (creator) */
 .options-wrap { display: grid; gap: 10px; margin-top: 10px; }
 
 .option-row {
@@ -616,13 +713,11 @@ input:focus, select:focus, textarea:focus {
   background: rgba(255,47,87,0.12);
   color: #fff;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 1000;
   cursor: pointer;
 }
 
-:root[data-theme="light"] .opt-del {
-  color: #d9163b;
-}
+:root[data-theme="light"] .opt-del { color: #d9163b; }
 
 .opt-add-btn {
   width: auto;
@@ -639,7 +734,7 @@ input:focus, select:focus, textarea:focus {
   margin: 12px auto 10px;
   display: grid;
   place-items: center;
-  font-weight: 1000;
+  font-weight: 1100;
   font-size: 2rem;
   color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--primary2));
@@ -656,6 +751,7 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 360px) {
   .brand-title { font-size: 2.7rem; }
   .screen { padding: 16px 14px; }
+  .qnav-mini { min-width: 96px; }
 }
 
 /* Disable any old background question marks */
